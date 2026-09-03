@@ -49,6 +49,9 @@ check("session sponsors render", (await page.locator(".sponsor").count()) === 4)
    and every one of them opened safely in a new tab. */
 check("event sponsor credits link out",
   (await page.locator("#event-sponsors a.ext").count()) === 2);
+check("footer credit links to the TechZone",
+  (await page.locator("#site-credit a.ext").getAttribute("href"))
+    === "https://www.hawaiischoolforgirls.org/academics/techzone");
 check("session link row renders",
   (await page.locator(".session .links a.ext").count()) === 3);
 const unsafe = await page.locator("a.ext").evaluateAll(

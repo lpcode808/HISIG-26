@@ -1,9 +1,15 @@
 # HiSIG 2026 Program App
 
+**Live site: https://lpcode808.github.io/HISIG-26/**
+
+Made at the [TechZone](https://www.hawaiischoolforgirls.org/academics/techzone)
+at Hawaiʻi School for Girls at La Pietra.
+
 Mobile-first static conference companion for HiSIG 2026 — *Navigating Global
 Digital Governance*, Friday September 4, 2026, Mililani, Hawaiʻi. No build
-step, no framework, no backend. Ported from `conference-skeleton-export/`, but
-split into separate files instead of one 6,000-line HTML document.
+step, no framework, no backend. Ported from the conference skeleton in
+`lpcode808/KSEDTECH-26`, but split into separate files instead of one
+6,000-line HTML document.
 
     index.html    app shell (markup only)
     styles.css    theme + layout; all color is custom properties at the top
@@ -70,11 +76,19 @@ from the same properties.
     npm run serve            # in one shell
     npm test                 # in another
 
-35 checks covering search, filters, stars, note save/persist/delete,
+40 checks covering search, filters, stars, note save/persist/delete,
 cross-navigation, export contents, the destructive-action guard, mobile
-layout, touch-target sizes, console errors, UTC conversion, and the live
-badge — including one run with the clock moved to 11:00 HST on event day to
-confirm NOW lands on the right session.
+layout, touch-target sizes, console errors, UTC conversion, outbound links,
+and the live badge — including one run with the clock moved to 11:00 HST on
+event day to confirm NOW lands on the right session.
+
+## Deploy
+
+GitHub Pages serves this repo from the root of `main`. Push to `main` and the
+live site updates a minute or two later; there is no build step or workflow.
+
+Every path in the app is relative, so it works from a project subpath
+(`/HISIG-26/`) as well as from a domain root.
 
 ## Needs human confirmation before publishing
 

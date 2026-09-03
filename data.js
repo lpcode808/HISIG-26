@@ -49,7 +49,12 @@ const DATA = {
       { text: "Technical Production sponsored by the Internet Society",
         url: "https://www.internetsociety.org/" },
       { text: "Facilities sponsored by Servpac", url: "https://servpac.com/" }
-    ]
+    ],
+    /* Footer credit for whoever built the site. Clear `text` to drop the line. */
+    credit: {
+      text: "Made at the TechZone — Hawaiʻi School for Girls at La Pietra",
+      url: "https://www.hawaiischoolforgirls.org/academics/techzone"
+    }
   },
 
   days: [

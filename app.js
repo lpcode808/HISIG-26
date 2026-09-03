@@ -163,6 +163,15 @@
       $("#event-sponsors").remove();
     }
 
+    /* Built-by credit. Drops the whole line rather than leaving an empty <p>. */
+    const credit = DATA.event.credit || {};
+    const creditMount = $("#site-credit");
+    if (credit.text) {
+      creditMount.append(credit.url ? extLink(credit.text, credit.url) : credit.text);
+    } else {
+      creditMount.remove();
+    }
+
     const reg = $("#register-link");
     if (DATA.event.registerUrl) {
       reg.href = DATA.event.registerUrl;
