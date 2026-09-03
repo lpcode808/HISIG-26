@@ -132,6 +132,24 @@
     }
     if (DATA.event.name) document.title = `Program — ${DATA.event.name}`;
 
+    const map = $("#venue-map");
+    const address = dig(DATA, "event.venue.address");
+    if (address) {
+      map.textContent = address;
+      map.href = "https://maps.google.com/?q=" + encodeURIComponent(
+        [dig(DATA, "event.venue.name"), address].filter(Boolean).join(", "));
+    } else {
+      map.closest("p").remove();
+    }
+
+    const sponsors = DATA.event.sponsors || [];
+    if (sponsors.length) {
+      const mount = $("#event-sponsors");
+      sponsors.forEach((line) => mount.append(el("li", { textContent: line })));
+    } else {
+      $("#event-sponsors").remove();
+    }
+
     const reg = $("#register-link");
     if (DATA.event.registerUrl) {
       reg.href = DATA.event.registerUrl;
@@ -232,7 +250,8 @@
 
     const when = el("div", { className: "when" }, [
       el("span", { className: "start", textContent: s.start }),
-      s.end ? el("span", { className: "end", textContent: s.end }) : null
+      s.end ? el("span", { className: "end", textContent: s.end }) : null,
+      utcLine(s)
     ]);
 
     const head = el("div", { className: "s-head" }, [
@@ -277,6 +296,8 @@
     if (s.room) meta.push(el("span", { className: "room", textContent: s.room }));
     if (meta.length) body.append(el("div", { className: "meta" }, meta));
 
+    if (s.sponsor) body.append(el("p", { className: "sponsor", textContent: s.sponsor }));
+
     if (s.type !== "break") {
       const details = el("details", { className: "expand" });
       const summary = el("summary");
@@ -285,7 +306,10 @@
       summary.append(el("span", { className: "note-dot", title: "You have a note here" }));
       details.append(summary);
 
-      if (s.abstract) details.append(el("p", { className: "abstract", textContent: s.abstract }));
+      if (s.abstract) {
+        s.abstract.split(/\n\s*\n/).forEach((para) =>
+          details.append(el("p", { className: "abstract", textContent: para.trim() })));
+      }
       if (s.summary) {
         details.append(el("p", { className: "summary" }, [
           el("strong", { textContent: "Why it matters: " }),
@@ -765,9 +789,43 @@
     return naive - (seen - naive);
   }
 
+  /* The official program lists UTC beside HST because the audience is
+     international. Derived rather than transcribed so the two cannot drift. */
+  const utcFmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC", hour: "2-digit", minute: "2-digit", hour12: false
+  });
+
+  function utcLine(s) {
+    const day = dayById.get(s.day);
+    const start = zonedMs(day && day.date, s.start24);
+    if (start == null) return null;
+    const end = zonedMs(day && day.date, s.end24);
+    const text = end == null
+      ? `${utcFmt.format(start)} UTC`
+      : `${utcFmt.format(start)}–${utcFmt.format(end)} UTC`;
+    return el("span", { className: "utc", textContent: text });
+  }
+
+  /* Today's calendar date as the event's timezone sees it. */
+  function eventLocalDateKey(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: DATA.event.timeZone,
+      year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(date).reduce((acc, p) => {
+      if (p.type !== "literal") acc[p.type] = p.value;
+      return acc;
+    }, {});
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
   function updateLiveBadges() {
     $$(".status-badge").forEach((b) => b.remove());
     $$(".session").forEach((n) => n.classList.remove("is-now", "is-next"));
+
+    /* Off-event, "Up Next" would sit on the first session for months. Only
+       badge while the event is actually running in its own timezone. */
+    const today = eventLocalDateKey();
+    if (!DATA.days.some((d) => d.date === today)) return;
 
     const now = Date.now();
     const timed = DATA.sessions

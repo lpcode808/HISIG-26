@@ -24,7 +24,9 @@ await page.goto(BASE, { waitUntil: "networkidle" });
 
 /* -- program ------------------------------------------------------------- */
 check("program renders sessions", (await page.locator(".session").count()) > 0);
-check("day tabs render", (await page.locator(".day").count()) >= 1);
+/* Single-day event: the day-tab bar hides itself rather than showing one tab. */
+check("single-day event hides the day tabs", await page.locator(".days").isHidden());
+check("all sessions render", (await page.locator(".session").count()) === 11);
 
 await page.fill("#q", "keynote");
 await page.waitForTimeout(250);
@@ -33,11 +35,20 @@ check("search filters the program", searched === 1, `${searched} result(s)`);
 await page.fill("#q", "");
 await page.waitForTimeout(250);
 
-await page.selectOption("#track", "Track B");
-await page.waitForTimeout(150);
-check("track filter narrows results", (await page.locator(".session").count()) === 1);
-await page.selectOption("#track", "");
-await page.waitForTimeout(150);
+/* No session declares a track, so the filter removes itself. */
+check("track filter hides when unused", await page.locator(".select").isHidden());
+
+check("UTC line is derived for every timed session",
+  (await page.locator(".when .utc").count()) === 11);
+/* 9:00-9:15 AM HST is 19:00-19:15 UTC, matching the official program. */
+check("UTC conversion is right for the 9:00 AM HST session",
+  (await page.locator(".session").nth(1).locator(".utc").textContent()).trim() === "19:00\u201319:15 UTC");
+check("session sponsors render", (await page.locator(".sponsor").count()) === 4);
+
+/* Off-event, nothing should be badged -- otherwise "Up Next" sits on the first
+   session for months before the conference. */
+check("no live badges outside the event day",
+  (await page.locator(".status-badge").count()) === 0);
 
 /* -- stars --------------------------------------------------------------- */
 const firstStar = page.locator(".session:not(.break) .star").first();
@@ -66,10 +77,13 @@ check("star survives reload",
 
 /* -- speakers ------------------------------------------------------------ */
 await page.click("#tab-speakers");
-check("speakers render", (await page.locator(".speaker").count()) === 3);
-await page.fill("#speaker-q", "second");
+check("speakers render", (await page.locator(".speaker").count()) === 16);
+await page.fill("#speaker-q", "icann");
 await page.waitForTimeout(250);
-check("speaker search filters", (await page.locator(".speaker").count()) === 1);
+check("speaker search matches organizations", (await page.locator(".speaker").count()) === 2);
+await page.fill("#speaker-q", "cerf");
+await page.waitForTimeout(250);
+check("speaker search matches names", (await page.locator(".speaker").count()) === 1);
 await page.fill("#speaker-q", "");
 await page.waitForTimeout(250);
 
@@ -140,6 +154,20 @@ const smallTargets = await page.evaluate(() =>
 check("touch targets are large enough", smallTargets.length === 0, smallTargets.join(", "));
 
 check("no console errors", errors.length === 0, errors.join(" | "));
+
+/* -- live badges, with the clock moved into the event ---------------------- */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const live = await ctx.newPage();
+  /* 2026-09-04 21:00 UTC == 11:00 HST, inside Understanding Internet Governance. */
+  await live.clock.setFixedTime(new Date("2026-09-04T21:00:00Z"));
+  await live.goto(BASE, { waitUntil: "networkidle" });
+  const now = live.locator(".status-badge.is-now");
+  check("NOW badge appears during the event", (await now.count()) === 1);
+  check("NOW badge lands on the running session",
+    (await live.locator(".session.is-now .title").textContent()) === "Understanding Internet Governance");
+  await ctx.close();
+}
 
 await browser.close();
 

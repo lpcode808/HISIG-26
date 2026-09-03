@@ -1,8 +1,9 @@
-# Conference Program App
+# HiSIG 2026 Program App
 
-Mobile-first static conference companion. No build step, no framework, no
-backend. Ported from `conference-skeleton-export/`, but split into separate
-files instead of one 6,000-line HTML document.
+Mobile-first static conference companion for HiSIG 2026 — *Navigating Global
+Digital Governance*, Friday September 4, 2026, Mililani, Hawaiʻi. No build
+step, no framework, no backend. Ported from `conference-skeleton-export/`, but
+split into separate files instead of one 6,000-line HTML document.
 
     index.html    app shell (markup only)
     styles.css    theme + layout; all color is custom properties at the top
@@ -24,8 +25,11 @@ files instead of one 6,000-line HTML document.
 - **Export** — copy, iOS share sheet (`navigator.share`), or download a
   Markdown file that also lists saved sessions.
 - **Clear all** — requires typing `delete all`, since it is irreversible.
-- **NOW / Up Next** badges during the event, resolved in the event's IANA
-  timezone so they stay right across DST.
+- **NOW / Up Next** badges, resolved in the event's IANA timezone. They only
+  appear on an actual event day — otherwise "Up Next" would sit on the first
+  session for months.
+- **UTC times** shown beside HST on every session, derived from the HST time
+  rather than transcribed, so the two cannot drift.
 - **Works offline** after the first visit; installable to a phone home screen.
 
 ## Run it
@@ -66,19 +70,25 @@ from the same properties.
     npm run serve            # in one shell
     npm test                 # in another
 
-27 checks covering search, filters, stars, note save/persist/delete,
+35 checks covering search, filters, stars, note save/persist/delete,
 cross-navigation, export contents, the destructive-action guard, mobile
-layout, touch-target sizes, and console errors.
+layout, touch-target sizes, console errors, UTC conversion, and the live
+badge — including one run with the clock moved to 11:00 HST on event day to
+confirm NOW lands on the right session.
 
-## Status
+## Needs human confirmation before publishing
 
-**Program content is placeholder.** The source page
-(https://www.hisig.org/program/) is blocked by this environment's network
-egress policy, so real content has not been filled in. Swapping it in is a
-`data.js` edit.
+Content was transcribed from pasted text, not scraped (hisig.org is blocked by
+this environment's network egress policy). Check against the official program:
 
-## Before publishing
-
-The skeleton's review list still applies: verify session order and times,
-timezone, room names, and speaker spelling/titles/organizations against the
-official program, and test once on a real phone.
+- The **Indigenous Knowledge** session lists a `Moderator:` label with no name
+  in the source. Currently omitted.
+- **4:00–4:30 pm is unaccounted for** between the last panel and the reception.
+  Rendered as a gap; presumably travel to Wahiawā.
+- The **Pau Hana Reception is at a different venue** (604 Clubhouse, Wahiawā).
+  Called out on the card, but worth making louder if attendees will drive.
+- **No registration link** was in the source, so the Register button is hidden.
+  Set `event.registerUrl` to show it.
+- Speaker titles and organizations are as written in the source; several
+  speakers have an organization but no title.
+- Verify spelling of names and organizations, and test once on a real phone.

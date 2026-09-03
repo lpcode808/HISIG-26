@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Program — Conference 2026</title>
-<meta name="description" content="Program, speakers, and your own notes.">
+<title>Program — HiSIG 2026</title>
+<meta name="description" content="HiSIG 2026 program, speakers, and your own notes. Friday September 4, 2026, Mililani, Hawaiʻi.">
 <meta name="theme-color" content="#1f4fd8">
+<meta name="format-detection" content="telephone=no,address=no,date=no">
 <link rel="icon" href="favicon.svg">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="styles.css">
@@ -18,9 +19,12 @@
   <div class="wrap bar">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span data-bind="event.shortName">Conference 2026</span>
+      <span data-bind="event.shortName">HiSIG 2026</span>
     </div>
-    <p class="brand-sub"><span data-bind="event.dates"></span> · <span data-bind="event.location"></span></p>
+    <p class="brand-sub">
+      <span data-bind="event.dates"></span> · <span data-bind="event.location"></span>
+    </p>
+    <p class="theme" data-bind="event.tagline"></p>
   </div>
   <nav class="tabs wrap" role="tablist" aria-label="Sections">
     <button class="tab" id="tab-program"  role="tab" aria-controls="panel-program"  aria-selected="true">Program</button>
@@ -59,8 +63,9 @@
       <section class="venue-block">
         <h2>Venue</h2>
         <p class="strong" data-bind="event.venue.name"></p>
-        <p class="muted" data-bind="event.venue.address"></p>
+        <p class="muted"><a id="venue-map" rel="noopener noreferrer" target="_blank"></a></p>
         <p class="muted" data-bind="event.venue.notes"></p>
+        <ul class="sponsors" id="event-sponsors"></ul>
         <p><a id="register-link" class="btn" hidden>Register</a></p>
         <p class="muted small">Official program:
           <a data-bind-href="event.officialUrl" data-bind="event.officialUrl"></a>

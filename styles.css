@@ -90,6 +90,10 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 .brand { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; }
 .brand-mark { width: 11px; height: 11px; border-radius: 3px; background: var(--accent); flex: none; }
 .brand-sub { margin: 0; font-size: .82rem; color: var(--ink-soft); }
+.theme {
+  flex-basis: 100%; margin: .15rem 0 0; font-size: .82rem;
+  color: var(--accent); font-weight: 650;
+}
 
 .tabs { display: flex; gap: .25rem; }
 .tab {
@@ -208,6 +212,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 .when { font-variant-numeric: tabular-nums; font-size: .86rem; color: var(--ink-soft); }
 .when .start { display: block; font-weight: 650; color: var(--ink); }
 .when .end { display: block; }
+.when .utc { display: block; margin-top: .2rem; font-size: .74rem; opacity: .8; }
 
 .status-badge {
   display: inline-block; margin-top: .3rem; padding: .1rem .45rem;
@@ -251,6 +256,9 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 summary.has-note .note-dot { display: block; }
 
 .abstract, .summary { font-size: .92rem; color: var(--ink-soft); margin: .5rem 0 0; }
+.sponsor { font-size: .78rem; color: var(--ink-soft); margin: .4rem 0 0; font-style: italic; }
+.sponsors { margin: .5rem 0 .75rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: .86rem; }
+.sponsors li { margin-bottom: .15rem; }
 .summary { color: var(--ink); }
 
 .note-editor { margin-top: .6rem; }
