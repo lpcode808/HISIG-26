@@ -21,6 +21,7 @@ step, no framework, no backend. Ported from the conference skeleton in
     sw.js         offline cache
     smoke.mjs     headless end-to-end test
     fonts/        the self-hosted display face, its license and its provenance
+    vendor/       self-hosted QR code library for the Venue toggle's share code
     manifest.webmanifest, favicon.svg
 
 ## What attendees get
@@ -44,6 +45,9 @@ step, no framework, no backend. Ported from the conference skeleton in
 - **UTC times** shown beside HST on every session, derived from the HST time
   rather than transcribed, so the two cannot drift.
 - **Works offline** after the first visit; installable to a phone home screen.
+- **Venue & share** — a toggle in the sticky header, collapsed by default, with
+  the venue address and a QR code (generated on-device, no network call) that
+  points at this page itself, so anyone can scan it to open the program.
 
 ## Run it
 

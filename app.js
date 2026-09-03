@@ -212,6 +212,36 @@
     }
   }
 
+  /* ── venue toggle: QR + copy link ────────────────────────────────────── */
+
+  /* The QR always points at this page itself -- not event.officialUrl -- so
+     scanning it hands someone the program app, wherever it happens to be
+     deployed (GitHub Pages, a subpath, a phone previewing it locally). */
+  function renderVenueShare() {
+    const shareUrl = location.origin + location.pathname;
+
+    const mount = $("#site-qr");
+    if (mount && typeof qrcode === "function") {
+      const qr = qrcode(0, "M");
+      qr.addData(shareUrl);
+      qr.make();
+      mount.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+    }
+
+    $("#copy-site-link").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast("Link copied");
+      } catch {
+        toast("Couldn't copy -- select the address bar instead");
+      }
+    });
+
+    /* The details panel changes the sticky header's height when it opens or
+       closes; --stick has to follow or #main's scroll-margin drifts stale. */
+    $("#venue-toggle").addEventListener("toggle", syncStick);
+  }
+
   /* ── top-level tabs ──────────────────────────────────────────────────── */
 
   const TABS = ["program", "speakers", "notes"];
@@ -995,6 +1025,7 @@
   /* ── init ────────────────────────────────────────────────────────────── */
 
   bindStatic();
+  renderVenueShare();
   wireTabs();
   buildDayTabs();
   buildTrackFilter();

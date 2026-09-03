@@ -20,10 +20,14 @@
 
 <header class="site">
   <div class="wrap bar">
-    <div class="brand">
+    <a class="brand" data-bind-href="event.officialUrl" target="_blank" rel="noopener noreferrer">
       <span class="brand-mark" aria-hidden="true"></span>
       <span data-bind="event.shortName">HiSIG 2026</span>
-    </div>
+      <svg class="ext-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="sr">(opens the official program on hisig.org in a new tab)</span>
+    </a>
     <p class="brand-sub">
       <span data-bind="event.dates"></span> · <span data-bind="event.location"></span>
     </p>
@@ -35,6 +39,35 @@
       Notes <span class="pill" id="note-count" hidden></span>
     </button>
   </nav>
+  <details class="venue-toggle wrap" id="venue-toggle">
+    <summary>
+      <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+      Venue &amp; share
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </summary>
+    <div class="venue-panel">
+      <div class="venue-info">
+        <p class="strong" data-bind="event.venue.name"></p>
+        <p class="muted"><a id="venue-map" rel="noopener noreferrer" target="_blank"></a></p>
+        <p class="muted" data-bind="event.venue.notes"></p>
+        <ul class="sponsors" id="event-sponsors"></ul>
+        <p><a id="register-link" class="btn" hidden>Register</a></p>
+        <p class="muted small">Official program:
+          <a data-bind-href="event.officialUrl" data-bind="event.officialUrl"></a>
+        </p>
+      </div>
+      <div class="venue-share">
+        <div class="qr-wrap" id="site-qr" aria-hidden="true"></div>
+        <p class="muted small">Scan to open this page, or</p>
+        <button class="btn ghost" id="copy-site-link" type="button">Copy link</button>
+      </div>
+    </div>
+  </details>
 </header>
 
 <main id="main">
@@ -63,18 +96,6 @@
       <p class="count" id="count" aria-live="polite"></p>
       <div id="schedule"></div>
       <p class="empty" id="empty" hidden>No sessions match that filter.</p>
-
-      <section class="venue-block">
-        <h2>Venue</h2>
-        <p class="strong" data-bind="event.venue.name"></p>
-        <p class="muted"><a id="venue-map" rel="noopener noreferrer" target="_blank"></a></p>
-        <p class="muted" data-bind="event.venue.notes"></p>
-        <ul class="sponsors" id="event-sponsors"></ul>
-        <p><a id="register-link" class="btn" hidden>Register</a></p>
-        <p class="muted small">Official program:
-          <a data-bind-href="event.officialUrl" data-bind="event.officialUrl"></a>
-        </p>
-      </section>
     </div>
   </section>
 
@@ -193,6 +214,7 @@
 </footer>
 
 <script src="data.js"></script>
+<script src="vendor/qrcode.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

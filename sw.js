@@ -4,13 +4,14 @@
    BUMP CACHE_NAME whenever any precached file changes, or returning visitors
    keep the old version until the next revalidation cycle. */
 
-const CACHE_NAME = "hisig26-v4";
+const CACHE_NAME = "hisig26-v5";
 const PRECACHE = [
   "./",
   "./index.html",
   "./styles.css",
   "./fonts/vollkorn-var-subset.woff2",
   "./data.js",
+  "./vendor/qrcode.js",
   "./app.js",
   "./favicon.svg",
   "./favicon-32.png",
