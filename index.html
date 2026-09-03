@@ -2,52 +2,40 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Program — Conference 2026</title>
-<meta name="description" content="Full program and schedule for Conference 2026.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#128197;</text></svg>">
+<meta name="description" content="Program, speakers, and your own notes.">
+<meta name="theme-color" content="#1f4fd8">
+<link rel="icon" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<a class="skip" href="#main">Skip to program</a>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="site">
   <div class="wrap bar">
-    <a class="brand" href="#top">
+    <div class="brand">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-text" data-bind="event.shortName">Conference 2026</span>
-    </a>
-    <nav aria-label="Primary">
-      <a href="#program">Program</a>
-      <a href="#speakers">Speakers</a>
-      <a href="#venue">Venue</a>
-      <a class="cta" href="#register" data-bind-href="event.registerUrl">Register</a>
-    </nav>
+      <span data-bind="event.shortName">Conference 2026</span>
+    </div>
+    <p class="brand-sub"><span data-bind="event.dates"></span> · <span data-bind="event.location"></span></p>
   </div>
+  <nav class="tabs wrap" role="tablist" aria-label="Sections">
+    <button class="tab" id="tab-program"  role="tab" aria-controls="panel-program"  aria-selected="true">Program</button>
+    <button class="tab" id="tab-speakers" role="tab" aria-controls="panel-speakers" aria-selected="false">Speakers</button>
+    <button class="tab" id="tab-notes"    role="tab" aria-controls="panel-notes"    aria-selected="false">
+      Notes <span class="pill" id="note-count" hidden></span>
+    </button>
+  </nav>
 </header>
 
 <main id="main">
 
-  <section class="hero" id="top">
+  <!-- ── PROGRAM ────────────────────────────────────────────────────────── -->
+  <section class="panel" id="panel-program" role="tabpanel" aria-labelledby="tab-program">
     <div class="wrap">
-      <p class="kicker" data-bind="event.kicker">Annual Meeting</p>
-      <h1 data-bind="event.name">Conference 2026</h1>
-      <p class="lede" data-bind="event.tagline">Replace this line with the event's one-sentence description.</p>
-      <dl class="facts">
-        <div><dt>Dates</dt><dd data-bind="event.dates">—</dd></div>
-        <div><dt>Location</dt><dd data-bind="event.location">—</dd></div>
-        <div><dt>Format</dt><dd data-bind="event.format">—</dd></div>
-      </dl>
-    </div>
-  </section>
-
-  <section class="section" id="program">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Program</h2>
-        <p class="muted" data-bind="event.programNote"></p>
-      </div>
 
       <div class="controls">
         <div class="days" role="tablist" aria-label="Program days"></div>
@@ -60,50 +48,130 @@
             <span class="sr">Filter by track</span>
             <select id="track"><option value="">All tracks</option></select>
           </label>
+          <button class="chip-toggle" id="starred-only" type="button" aria-pressed="false">★ Saved</button>
         </div>
       </div>
 
       <p class="count" id="count" aria-live="polite"></p>
       <div id="schedule"></div>
       <p class="empty" id="empty" hidden>No sessions match that filter.</p>
-    </div>
-  </section>
 
-  <section class="section alt" id="speakers">
-    <div class="wrap">
-      <div class="section-head"><h2>Speakers</h2></div>
-      <ul class="speakers" id="speakers-list"></ul>
-    </div>
-  </section>
-
-  <section class="section" id="venue">
-    <div class="wrap venue">
-      <div>
-        <div class="section-head"><h2>Venue</h2></div>
-        <p data-bind="event.venue.name"></p>
+      <section class="venue-block">
+        <h2>Venue</h2>
+        <p class="strong" data-bind="event.venue.name"></p>
         <p class="muted" data-bind="event.venue.address"></p>
-        <p data-bind="event.venue.notes"></p>
+        <p class="muted" data-bind="event.venue.notes"></p>
+        <p><a id="register-link" class="btn" hidden>Register</a></p>
+        <p class="muted small">Official program:
+          <a data-bind-href="event.officialUrl" data-bind="event.officialUrl"></a>
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── SPEAKERS ───────────────────────────────────────────────────────── -->
+  <section class="panel" id="panel-speakers" role="tabpanel" aria-labelledby="tab-speakers" hidden>
+    <div class="wrap">
+      <div class="filters">
+        <label class="search">
+          <span class="sr">Search speakers</span>
+          <input type="search" id="speaker-q" placeholder="Search speakers" autocomplete="off">
+        </label>
+        <button class="chip-toggle" id="speakers-starred-only" type="button" aria-pressed="false">★ Saved</button>
       </div>
-      <div class="card" id="register">
-        <h3>Registration</h3>
-        <p class="muted" data-bind="event.registerNote"></p>
-        <a class="btn" data-bind-href="event.registerUrl" href="#">Register</a>
+      <p class="count" id="speaker-count" aria-live="polite"></p>
+      <div id="speakers-list"></div>
+      <p class="empty" id="speakers-empty" hidden>No speakers match that search.</p>
+    </div>
+  </section>
+
+  <!-- ── NOTES ──────────────────────────────────────────────────────────── -->
+  <section class="panel" id="panel-notes" role="tabpanel" aria-labelledby="tab-notes" hidden>
+    <div class="wrap">
+      <div class="notes-head">
+        <h2>Your notes</h2>
+        <div class="notes-actions">
+          <button class="btn ghost" id="export-btn" type="button" aria-haspopup="dialog">Export ↓</button>
+          <button class="btn ghost danger" id="clear-btn" type="button" aria-haspopup="dialog">Clear all</button>
+        </div>
       </div>
+      <p class="muted small">
+        Notes are saved in this browser on this device only — nothing is uploaded,
+        and clearing site data removes them. Export a copy before the event ends.
+      </p>
+
+      <div class="composer">
+        <label class="sr" for="quick-note">Quick note</label>
+        <textarea id="quick-note" rows="3" placeholder="Jot anything not tied to a session…"></textarea>
+        <div class="composer-row">
+          <span class="muted small" id="quick-note-meta"></span>
+          <button class="btn" id="save-quick" type="button">Save</button>
+        </div>
+      </div>
+
+      <label class="search notes-search">
+        <span class="sr">Search your notes</span>
+        <input type="search" id="notes-q" placeholder="Search your notes" autocomplete="off">
+      </label>
+
+      <p class="count" id="notes-count" aria-live="polite"></p>
+      <div id="notes-list"></div>
+      <p class="empty" id="notes-empty" hidden>No notes yet. Save one from any session or speaker.</p>
     </div>
   </section>
 
 </main>
 
+<!-- ── EXPORT MODAL ─────────────────────────────────────────────────────── -->
+<div class="overlay" id="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="export-title">Export your notes</h2>
+      <button class="icon-btn" id="export-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <p class="muted small" id="export-hint">
+      On iPhone, tap <strong>Share</strong> to send these to Notes. Otherwise copy them
+      or download a Markdown file.
+    </p>
+    <label class="sr" for="export-text">Your notes, formatted for export</label>
+    <textarea id="export-text" readonly rows="12"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="export-copy" type="button">Copy</button>
+      <button class="btn ghost" id="export-share" type="button" hidden>Share</button>
+      <button class="btn ghost" id="export-download" type="button">Download .md</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLEAR CONFIRM MODAL ──────────────────────────────────────────────── -->
+<div class="overlay" id="clear-modal" role="dialog" aria-modal="true" aria-labelledby="clear-title" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="clear-title">Delete all notes</h2>
+      <button class="icon-btn" id="clear-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <p>This permanently removes every note and saved star from this browser. It cannot be undone.</p>
+    <label class="confirm-label" for="clear-input">Type <strong>delete all</strong> to confirm</label>
+    <input id="clear-input" type="text" autocomplete="off" placeholder="delete all">
+    <div class="modal-actions">
+      <button class="btn danger" id="clear-confirm" type="button" disabled>Delete all notes</button>
+      <button class="btn ghost" id="clear-cancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 <footer class="site-footer">
   <div class="wrap">
-    <p data-bind="event.name"></p>
-    <p class="muted">Program subject to change. Official source:
-      <a data-bind-href="event.officialUrl" data-bind="event.officialUrl" href="#"></a>
+    <p class="muted small">
+      <span data-bind="event.name"></span> · Program subject to change.
+      Notes stay on this device.
     </p>
   </div>
 </footer>
 
 <script src="data.js"></script>
-<script src="script.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

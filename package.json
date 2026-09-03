@@ -1,0 +1,12 @@
+{
+  "name": "conference-program",
+  "private": true,
+  "description": "Static conference program app. The site itself has no dependencies; playwright is only for the smoke test.",
+  "scripts": {
+    "serve": "python3 -m http.server 4180",
+    "test": "node smoke.mjs http://127.0.0.1:4180/"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
