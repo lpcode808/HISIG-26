@@ -1,10 +1,10 @@
 /* Headless smoke test for the core attendee flows.
-   Usage: node smoke.mjs [baseUrl]   (default http://127.0.0.1:4180/hisig-site/)
+   Usage: node smoke.mjs [baseUrl]   (default http://127.0.0.1:4180/)
    Requires playwright locally; the site itself has no dependencies. */
 
 import { chromium } from "playwright";
 
-const BASE = process.argv[2] || "http://127.0.0.1:4180/hisig-site/";
+const BASE = process.argv[2] || "http://127.0.0.1:4180/";
 const CHROME = process.env.CHROME_PATH || undefined;
 
 const results = [];
@@ -45,6 +45,16 @@ check("UTC conversion is right for the 9:00 AM HST session",
   (await page.locator(".session").nth(1).locator(".utc").textContent()).trim() === "19:00\u201319:15 UTC");
 check("session sponsors render", (await page.locator(".sponsor").count()) === 4);
 
+/* Outbound links: the event sponsor credits, the reception's venue/film links,
+   and every one of them opened safely in a new tab. */
+check("event sponsor credits link out",
+  (await page.locator("#event-sponsors a.ext").count()) === 2);
+check("session link row renders",
+  (await page.locator(".session .links a.ext").count()) === 3);
+const unsafe = await page.locator("a.ext").evaluateAll(
+  (ns) => ns.filter((n) => n.target !== "_blank" || !n.rel.includes("noopener")).length);
+check("outbound links carry target=_blank + noopener", unsafe === 0, `${unsafe} unsafe`);
+
 /* Off-event, nothing should be badged -- otherwise "Up Next" sits on the first
    session for months before the conference. */
 check("no live badges outside the event day",
@@ -78,6 +88,12 @@ check("star survives reload",
 /* -- speakers ------------------------------------------------------------ */
 await page.click("#tab-speakers");
 check("speakers render", (await page.locator(".speaker").count()) === 16);
+/* Every speaker the official program hyperlinked gets a linked affiliation
+   line; Burt Lum has no link there, so his stays plain text. */
+check("speaker affiliations link out",
+  (await page.locator(".speaker p.muted a.ext").count()) === 15);
+check("unlinked speaker keeps a plain affiliation",
+  (await page.locator("#speaker-burt-lum p.muted a").count()) === 0);
 await page.fill("#speaker-q", "icann");
 await page.waitForTimeout(250);
 check("speaker search matches organizations", (await page.locator(".speaker").count()) === 2);

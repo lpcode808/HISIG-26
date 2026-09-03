@@ -17,6 +17,13 @@
     return node;
   };
 
+  /* Outbound link to somewhere off this site. noopener/noreferrer because
+     target=_blank without it hands the new tab a handle back to this one. */
+  const extLink = (text, url) => el("a", {
+    className: "ext", href: url, textContent: text,
+    target: "_blank", rel: "noopener noreferrer"
+  });
+
   const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const norm = (s) => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 
@@ -145,7 +152,13 @@
     const sponsors = DATA.event.sponsors || [];
     if (sponsors.length) {
       const mount = $("#event-sponsors");
-      sponsors.forEach((line) => mount.append(el("li", { textContent: line })));
+      /* A sponsor line is either a plain string or { text, url }. */
+      sponsors.forEach((s) => {
+        const text = typeof s === "string" ? s : (s.text || "");
+        const url  = typeof s === "string" ? "" : (s.url || "");
+        if (!text) return;
+        mount.append(el("li", {}, url ? extLink(text, url) : text));
+      });
     } else {
       $("#event-sponsors").remove();
     }
@@ -298,6 +311,16 @@
 
     if (s.sponsor) body.append(el("p", { className: "sponsor", textContent: s.sponsor }));
 
+    if ((s.links || []).length) {
+      const row = el("p", { className: "links" });
+      s.links.forEach((l, i) => {
+        if (!l || !l.url) return;
+        if (i) row.append(" · ");
+        row.append(extLink(l.label || l.url, l.url));
+      });
+      if (row.childNodes.length) body.append(row);
+    }
+
     if (s.type !== "break") {
       const details = el("details", { className: "expand" });
       const summary = el("summary");
@@ -433,7 +456,11 @@
     ]));
 
     const affil = [p.title, p.org].filter(Boolean).join(", ");
-    if (affil) card.append(el("p", { className: "muted", textContent: affil }));
+    if (affil) {
+      const line = el("p", { className: "muted" });
+      line.append(p.url ? extLink(affil, p.url) : affil);
+      card.append(line);
+    }
     if (p.bio) card.append(el("p", { className: "bio", textContent: p.bio }));
 
     const mine = sessionsForSpeaker(p);

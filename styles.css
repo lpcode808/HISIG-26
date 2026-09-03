@@ -256,6 +256,14 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 summary.has-note .note-dot { display: block; }
 
 .abstract, .summary { font-size: .92rem; color: var(--ink-soft); margin: .5rem 0 0; }
+/* Outbound links inherit the surrounding size so they don't shout inside a
+   muted affiliation line or an italic sponsor credit. */
+.ext { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.ext:hover, .ext:focus-visible { color: var(--accent); }
+
+.links { font-size: .82rem; margin: .4rem 0 0; color: var(--ink-soft); }
+.links .ext { color: var(--accent); }
+
 .sponsor { font-size: .78rem; color: var(--ink-soft); margin: .4rem 0 0; font-style: italic; }
 .sponsors { margin: .5rem 0 .75rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: .86rem; }
 .sponsors li { margin-bottom: .15rem; }

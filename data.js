@@ -20,8 +20,11 @@
      speakers  optional   array of names, matched to DATA.speakers by name
      abstract  optional   official description
      summary   optional   plain-language "why this matters" line
+     links     optional   array of { label, url } shown as a row of links
 
-   Speaker fields: name (required), title, org, bio.
+   Speaker fields: name (required), title, org, bio, url.
+   `url` makes the "title, org" line a link -- use the destination the official
+   program page points at for that person (their org page, faculty bio, etc.).
 --------------------------------------------------------------------------- */
 
 const DATA = {
@@ -43,8 +46,9 @@ const DATA = {
       notes: "Doors open at 8:30 am. All times are Hawaiʻi Standard Time (HST, UTC−10)."
     },
     sponsors: [
-      "Technical Production sponsored by the Internet Society",
-      "Facilities sponsored by Servpac"
+      { text: "Technical Production sponsored by the Internet Society",
+        url: "https://www.internetsociety.org/" },
+      { text: "Facilities sponsored by Servpac", url: "https://servpac.com/" }
     ]
   },
 
@@ -132,26 +136,47 @@ const DATA = {
       room: "604 Clubhouse, 199 Leilehua Golf Course Rd, Wahiawa, HI 96786",
       sponsor: "Sponsored by the Internet Society · Special mahalo to ID8",
       abstract: "Special viewing of The 100th, Seeds of Aloha (time permitting).",
-      summary: "Different venue from the daytime program — about a 15 minute drive from Mililani Tech Park."
+      summary: "Different venue from the daytime program — about a 15 minute drive from Mililani Tech Park.",
+      links: [
+        { label: "604 Clubhouse", url: "https://604clubhouse.com/" },
+        { label: "The 100th, Seeds of Aloha", url: "https://100thfilm.org/" },
+        { label: "ID8", url: "https://id8.org/" }
+      ]
     }
   ],
 
   speakers: [
-    { name: "Burt Lum",           title: "Chair and Master of Ceremony", org: "HiSIG 2026 · Internet Society Hawaiʻi" },
-    { name: "Vint Cerf",          title: "Chief Internet Evangelist",    org: "Google" },
-    { name: "Fiona Alexander",    title: "IGF MAG",                      org: "American University" },
-    { name: "Ron da Silva",       title: "",                             org: "IGF-USA" },
-    { name: "Naela Sarras",       title: "",                             org: "ICANN" },
-    { name: "Jen Chung",          title: "VP Policy",                    org: "Dot.Asia" },
-    { name: "Avri Doria",         title: "",                             org: "Technicalities" },
-    { name: "Sharayah Lane",      title: "",                             org: "Internet Society" },
-    { name: "Leimomi Bong",       title: "",                             org: "Office of Indigenous Knowledge" },
-    { name: "Olin Kealoha Lagon", title: "Serial Social Entrepreneur",   org: "" },
-    { name: "Richard Ng",         title: "",                             org: "IndigiDAO" },
-    { name: "Colin Rhinesmith",   title: "",                             org: "University of Illinois Urbana-Champaign" },
-    { name: "Monique Tate",       title: "",                             org: "Community Tech New York" },
-    { name: "Edmon Chung",        title: "",                             org: "Dot.Asia" },
-    { name: "Graeme Bunton",      title: "",                             org: "NetBeacon" },
-    { name: "David Huberman",     title: "",                             org: "ICANN" }
+    { name: "Burt Lum",           title: "Chair and Master of Ceremony", org: "HiSIG 2026 · Internet Society Hawaiʻi",
+      url: "" },
+    { name: "Vint Cerf",          title: "Chief Internet Evangelist",    org: "Google",
+      url: "https://research.google/people/author32412/?type=google" },
+    { name: "Fiona Alexander",    title: "IGF MAG",                      org: "American University",
+      url: "https://www.american.edu/sis/faculty/fionaa.cfm" },
+    { name: "Ron da Silva",       title: "",                             org: "IGF-USA",
+      url: "https://igfusa.us/" },
+    { name: "Naela Sarras",       title: "",                             org: "ICANN",
+      url: "https://www.icann.org/en/announcements/details/naela-sarras-appointed-icann-vice-president-of-stakeholder-engagement-in-north-america-17-9-2020-en" },
+    { name: "Jen Chung",          title: "VP Policy",                    org: "Dot.Asia",
+      url: "https://www.intgovforum.org/en/content/chung-jennifer" },
+    { name: "Avri Doria",         title: "",                             org: "Technicalities",
+      url: "https://www.icann.org/resources/pages/teg-member-biographies-2019-02-13-en" },
+    { name: "Sharayah Lane",      title: "",                             org: "Internet Society",
+      url: "https://www.internetsociety.org/author/lane/" },
+    { name: "Leimomi Bong",       title: "",                             org: "Office of Indigenous Knowledge",
+      url: "https://research.hawaii.edu/oiki/" },
+    { name: "Olin Kealoha Lagon", title: "Serial Social Entrepreneur",   org: "",
+      url: "https://www.linkedin.com/in/olinlagon" },
+    { name: "Richard Ng",         title: "",                             org: "IndigiDAO",
+      url: "https://solve.mit.edu/solutions/90275" },
+    { name: "Colin Rhinesmith",   title: "",                             org: "University of Illinois Urbana-Champaign",
+      url: "https://ischool.illinois.edu/people/colin-rhinesmith" },
+    { name: "Monique Tate",       title: "",                             org: "Community Tech New York",
+      url: "https://www.communitytechny.org/community-tech-lab" },
+    { name: "Edmon Chung",        title: "",                             org: "Dot.Asia",
+      url: "https://www.dot.asia/" },
+    { name: "Graeme Bunton",      title: "",                             org: "NetBeacon",
+      url: "https://netbeacon.org/" },
+    { name: "David Huberman",     title: "",                             org: "ICANN",
+      url: "https://www.icann.org/profiles/116347" }
   ]
 };
