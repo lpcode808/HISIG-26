@@ -125,6 +125,17 @@
     }, 2200);
   }
 
+  /* Plenty of attendees will star and type all day from the programme cards
+     and never open the Notes tab, where the full explanation lives. The first
+     save is the one moment we know they are listening, so spend it. Counting
+     notes rather than storing a "seen" flag means someone who clears
+     everything and starts over is told again, which is right. */
+  function toastNoteSaved() {
+    toast(Object.keys(notes).length === 1
+      ? "Saved on this phone only — export before you go"
+      : "Note saved");
+  }
+
   /* ── static bindings ─────────────────────────────────────────────────── */
 
   function bindStatic() {
@@ -229,7 +240,7 @@
       if (!ok) return toast("Could not save — browser storage is blocked.");
       const now = getNote(type, id);
       meta.textContent = now ? `Saved ${relative(now.updatedAt)}` : "Cleared";
-      toast(now ? "Note saved" : "Note cleared");
+      if (now) toastNoteSaved(); else toast("Note cleared");
       syncNoteMarkers();
     });
 
@@ -656,7 +667,8 @@
   function wireNotesControls() {
     $("#save-quick").addEventListener("click", () => {
       const ok = saveNote("quick", "general", $("#quick-note").value);
-      toast(ok ? "Quick note saved" : "Could not save — browser storage is blocked.");
+      if (!ok) toast("Could not save — browser storage is blocked.");
+      else toastNoteSaved();
       renderNotes();
     });
     $("#notes-q").addEventListener("input", debounce((e) => {

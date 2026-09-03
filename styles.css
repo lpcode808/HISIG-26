@@ -413,6 +413,28 @@ summary.has-note .note-dot { display: block; }
 }
 .notes-actions { display: flex; gap: .5rem; }
 
+/* The privacy notice. It sits above the composer on purpose: the people who
+   most need to read it are the ones about to type their first note. Gold rule
+   rather than red -- this is the good news with a condition attached, not a
+   warning. */
+.privacy {
+  margin: 1rem 0 1.25rem; padding: .9rem 1.05rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--line); border-left: 3px solid var(--star);
+  border-radius: var(--radius);
+}
+.privacy h3 { font-size: var(--t-lead); margin-bottom: .4rem; }
+.privacy p {
+  font-size: var(--t-small); line-height: 1.6;
+  color: var(--ink-soft); margin: 0 0 .5rem; max-width: 62ch;
+}
+.privacy p:last-child { margin-bottom: 0; color: var(--ink); }
+.privacy strong { color: var(--ink); font-weight: 650; }
+/* "Export" here names the button above, so it is set like a label, not prose. */
+.privacy em {
+  font-style: normal; font-weight: 650; color: var(--ink);
+}
+
 .composer {
   margin: 1rem 0; padding: .9rem 1rem;
   background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius);
@@ -470,15 +492,22 @@ summary.has-note .note-dot { display: block; }
 .modal-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
 .confirm-label { display: block; margin-top: .7rem; font-size: var(--t-small); }
 
+/* Not a pill: the longest messages ("Could not save -- browser storage is
+   blocked.") wrap to two lines on a small phone, and a 99px radius on a
+   two-line box looks like a mistake. */
 .toast {
   position: fixed; left: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom));
   transform: translate(-50%, 1rem); z-index: 60;
-  padding: .65rem 1.1rem; border-radius: 99px;
-  background: var(--ink); color: var(--bg); font-size: .9rem;
+  /* width:max-content keeps a short message on one line -- a shrink-to-fit
+     fixed box otherwise balances itself down to a narrow column. */
+  width: max-content; max-width: min(26rem, calc(100% - 2rem));
+  padding: .65rem 1.1rem; border-radius: var(--radius);
+  background: var(--ink); color: var(--bg);
+  font-size: var(--t-small); font-weight: 600; line-height: 1.45;
+  text-align: center;
   opacity: 0; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.toast { font-weight: 600; }
 
 .site-footer { border-top: 1px solid var(--line); padding: 1.25rem 0 2rem; }
 

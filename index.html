@@ -104,10 +104,20 @@
           <button class="btn ghost danger" id="clear-btn" type="button" aria-haspopup="dialog">Clear all</button>
         </div>
       </div>
-      <p class="muted small">
-        Notes are saved in this browser on this device only — nothing is uploaded,
-        and clearing site data removes them. Export a copy before the event ends.
-      </p>
+      <aside class="privacy">
+        <h3>Your notes stay on your phone</h3>
+        <p>
+          No account, no server — everything you star or type is saved by this
+          browser alone, so nobody else can read it. The trade is that nothing
+          backs it up: clear your browser data or switch phones and it is gone
+          for good.
+        </p>
+        <p class="privacy-do">
+          <strong>So take them with you before you head home.</strong>
+          <em>Export</em> copies everything out as plain text — to your Notes
+          app, your clipboard, or a file you keep.
+        </p>
+      </aside>
 
       <div class="composer">
         <label class="sr" for="quick-note">Quick note</label>
@@ -139,8 +149,9 @@
       <button class="icon-btn" id="export-close" type="button" aria-label="Close">✕</button>
     </div>
     <p class="muted small" id="export-hint">
-      On iPhone, tap <strong>Share</strong> to send these to Notes. Otherwise copy them
-      or download a Markdown file.
+      <strong>This is the only copy.</strong> Put it somewhere you will still have
+      next week — on iPhone tap <strong>Share</strong> to drop it into Notes;
+      otherwise copy it or download a Markdown file.
     </p>
     <label class="sr" for="export-text">Your notes, formatted for export</label>
     <textarea id="export-text" readonly rows="12"></textarea>
@@ -175,7 +186,7 @@
   <div class="wrap">
     <p class="muted small">
       <span data-bind="event.name"></span> · Program subject to change.
-      Notes stay on this device.
+      Your notes are saved on this device only — export a copy to keep them.
     </p>
     <p class="muted small" id="site-credit"></p>
   </div>
