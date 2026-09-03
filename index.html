@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Program — Conference 2026</title>
+<meta name="description" content="Full program and schedule for Conference 2026.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#128197;</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to program</a>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text" data-bind="event.shortName">Conference 2026</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#program">Program</a>
+      <a href="#speakers">Speakers</a>
+      <a href="#venue">Venue</a>
+      <a class="cta" href="#register" data-bind-href="event.registerUrl">Register</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <div class="wrap">
+      <p class="kicker" data-bind="event.kicker">Annual Meeting</p>
+      <h1 data-bind="event.name">Conference 2026</h1>
+      <p class="lede" data-bind="event.tagline">Replace this line with the event's one-sentence description.</p>
+      <dl class="facts">
+        <div><dt>Dates</dt><dd data-bind="event.dates">—</dd></div>
+        <div><dt>Location</dt><dd data-bind="event.location">—</dd></div>
+        <div><dt>Format</dt><dd data-bind="event.format">—</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="program">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Program</h2>
+        <p class="muted" data-bind="event.programNote"></p>
+      </div>
+
+      <div class="controls">
+        <div class="days" role="tablist" aria-label="Program days"></div>
+        <div class="filters">
+          <label class="search">
+            <span class="sr">Search the program</span>
+            <input type="search" id="q" placeholder="Search sessions, speakers, rooms" autocomplete="off">
+          </label>
+          <label class="select">
+            <span class="sr">Filter by track</span>
+            <select id="track"><option value="">All tracks</option></select>
+          </label>
+        </div>
+      </div>
+
+      <p class="count" id="count" aria-live="polite"></p>
+      <div id="schedule"></div>
+      <p class="empty" id="empty" hidden>No sessions match that filter.</p>
+    </div>
+  </section>
+
+  <section class="section alt" id="speakers">
+    <div class="wrap">
+      <div class="section-head"><h2>Speakers</h2></div>
+      <ul class="speakers" id="speakers-list"></ul>
+    </div>
+  </section>
+
+  <section class="section" id="venue">
+    <div class="wrap venue">
+      <div>
+        <div class="section-head"><h2>Venue</h2></div>
+        <p data-bind="event.venue.name"></p>
+        <p class="muted" data-bind="event.venue.address"></p>
+        <p data-bind="event.venue.notes"></p>
+      </div>
+      <div class="card" id="register">
+        <h3>Registration</h3>
+        <p class="muted" data-bind="event.registerNote"></p>
+        <a class="btn" data-bind-href="event.registerUrl" href="#">Register</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p data-bind="event.name"></p>
+    <p class="muted">Program subject to change. Official source:
+      <a data-bind-href="event.officialUrl" data-bind="event.officialUrl" href="#"></a>
+    </p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
