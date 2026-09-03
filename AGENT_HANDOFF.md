@@ -2,6 +2,121 @@
 
 Newest entry first. Append a dated section when you finish a body of work.
 
+## 2026-09-03 Typography, Mobile UX Pass, Privacy Disclaimer
+
+Three things, in this order: a display face and a real type scale; a plain
+statement that notes live only on the attendee's phone; then an audit of the
+result on phone-sized screens and fixes for what it found.
+
+### Typography
+
+`fonts/vollkorn-var-subset.woff2` — Vollkorn, variable weight 400–900, 61 KB,
+OFL. It is the display face: brand, headings, session titles, speaker names,
+and the small-caps hour labels. Everything else — all body copy, every control
+— stays on the device's own sans. **Read `fonts/README.md` before touching
+this.** It has the provenance, the exact subsetting command, and the reason.
+
+The reason is Hawaiian orthography, and it is the thing to remember here:
+
+- **Fraunces has no U+02BB glyph at all.** Google Fonts' CSS declares the
+  ʻokina in its `latin` unicode-range, but the glyph is not in the font — the
+  browser silently substitutes another face for that one character.
+- **Literata has the glyph but shapes it wrong**, merging ʻokina into the
+  letter after it. "Hawaiʻi" rendered as "Hawaiï". This was seen in a browser
+  screenshot, not inferred.
+- Vollkorn renders the ʻokina and all five kahakō vowels correctly, verified
+  in Chromium.
+
+Test any replacement against `Hawaiʻi`, `ʻĀina`, `Waimānalo`, `kuleana` on a
+real screen. A font's character map is not enough — Literata passed that check
+and still failed.
+
+Self-hosted rather than linked from fonts.googleapis.com, deliberately: a font
+request to a third party on every page load contradicts the app's own claim
+that nothing about an attendee leaves their phone, and it would break offline
+mode. The file is precached by `sw.js`.
+
+**Note for a future event:** today's `data.js` happens to keep its Hawaiian
+text in sans-rendered elements (`location`, `venue.notes`, `credit`, a speaker
+`org`). The moment a session title or a speaker's name carries an ʻokina or a
+kahakō, it lands in the display face — which is what the font choice above was
+made for. The subset covers Latin + Latin Ext-A only; a Japanese, Korean,
+Vietnamese or Cyrillic name will fall back per-glyph.
+
+Sizes now come from a `--t-*` scale in `:root`. The old design had session
+titles at 1.02rem against 1rem body copy with everything else between .86 and
+.92 — different sizes, no hierarchy. Change the scale there, not per-rule.
+
+`event.tagline` moved out of the sticky header into the programme as a
+`.masthead` line. It was costing a third row of sticky height on every screen
+of every tab to repeat the same seven words. The header is now shorter than
+before despite a much larger wordmark.
+
+### The privacy disclaimer
+
+The Notes tab leads with a `.privacy` callout saying both halves: nobody else
+can read these, and precisely because of that, nothing backs them up.
+
+The part worth preserving if this gets rewritten: **it does not depend on
+anyone opening the Notes tab.** Attendees star and type all day from programme
+cards; someone can fill the app and never look at Notes. So the first note
+saved from anywhere gets a different toast — "Saved on this phone only —
+export before you go". It counts notes rather than storing a "seen" flag, so
+someone who clears everything and starts over is told again.
+
+### Mobile UX pass
+
+A subagent drove the app at 320, 360, 390, 430 and 844×390 landscape and
+reported 17 findings; each was re-verified here before and after fixing. Two
+could have cost an attendee their notes:
+
+1. **A pasted URL broke the whole app.** `.note-text` had `pre-wrap` but not
+   `overflow-wrap`, so one unbroken string gave the document horizontal
+   overflow — Chromium shrank a 390px viewport out to 543px and stayed that
+   way until the note was deleted. Guarded there and in every other box where
+   attendee or `data.js` text lands.
+2. **Opening a modal threw you to the top of your notes.** `body.locked` was
+   `overflow: hidden`, which collapses the viewport's scroll range and clamps
+   the offset to 0. Now `position: fixed` with the offset pinned to `top` and
+   restored on close.
+
+Also fixed: per-tab scroll memory (tabs used to reset all three panels to the
+top); 20px-tall speaker links in session cards; a search placeholder truncated
+at 390px that also advertised "rooms" this programme does not have; the star
+at 1.28:1 contrast with no tap feedback; the count pill breaking the tab row
+at 320px; export actions off-screen in landscape; undo on note delete; auto-
+growing note boxes; a measured `--stick`; a focus trap; honest empty states;
+a reduced-motion landing cue; and the horizontal safe-area inset.
+
+**`--stick` is now measured by `syncStick()` in app.js**, re-measured on
+resize and after the font swaps in. The literal in `:root` is only the
+pre-JS fallback. Do not hard-code it again — the old 112px matched no width.
+
+### Verification
+
+- Smoke test **41/41**, unchanged and unmodified — no test was relaxed to make
+  a fix pass.
+- Plus 21 targeted regression checks written for this pass (scroll restore,
+  overflow at 320/390, header height at three viewports, landscape export
+  reachability, undo, focus trap, placeholder fit). Those live in the session
+  scratchpad, not the repo; fold them into `smoke.mjs` if you want them kept.
+- `CACHE_NAME` is at **v4** (was v3). One bump covers this whole batch, since
+  v4 has not been served from `main` before now.
+- **Not** verified: anything on a real phone, and the two iOS-only items —
+  `88dvh` behaviour with the keyboard up, and the horizontal safe-area inset
+  in landscape on a notched device. Both are reasoned fixes, not measured
+  ones. Chromium cannot reproduce either.
+
+### Left alone on purpose
+
+- `--accent` is still `#1f4fd8` and does not match the logo. Restyling the
+  colour is a decision, not a defect — the sampled brand colours are listed
+  further down this file.
+- `event.kicker` ("Hawaiʻi School on Internet Governance") is in `data.js` and
+  rendered nowhere. It would sit naturally in the masthead, but adding it is a
+  content call.
+- Everything under "Still Needs Human Confirmation Before The Event" below.
+
 ## 2026-09-03 Repo Split Out Of KSEDTECH-26, Then Program Links + Branding
 
 Four things happened, in this order.

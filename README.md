@@ -106,11 +106,18 @@ same as any other precached file.
     npm run serve            # in one shell
     npm test                 # in another
 
-41 checks covering search, filters, stars, note save/persist/delete,
+48 checks covering search, filters, stars, note save/persist/delete,
 cross-navigation, export contents, the destructive-action guard, mobile
 layout, touch-target sizes, console errors, UTC conversion, outbound links,
 and the live badge — including one run with the clock moved to 11:00 HST on
 event day to confirm NOW lands on the right session.
+
+The last seven are regression guards for bugs that were live and invisible on
+a casual click-through: a pasted URL overflowing the page, a modal losing your
+scroll position or failing to lock the page behind it, `--stick` drifting from
+the real header height, and — at 320px — the note-count pill growing the
+header, the search placeholder being clipped, and horizontal overflow. Each
+was confirmed to fail with its fix reverted, so they are not decoration.
 
 ## Deploy
 

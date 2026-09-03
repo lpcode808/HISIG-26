@@ -174,6 +174,119 @@ check("touch targets are large enough", smallTargets.length === 0, smallTargets.
 
 check("no console errors", errors.length === 0, errors.join(" | "));
 
+/* -- regressions worth keeping -------------------------------------------- */
+/* Both of these were live bugs that could cost an attendee their notes, and
+   neither is visible on a casual click-through. */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const rp = await ctx.newPage();
+  await rp.goto(BASE, { waitUntil: "networkidle" });
+
+  /* A pasted URL is one unbroken string. Without overflow-wrap it ran off the
+     card and gave the whole document horizontal overflow, which persisted
+     until the note was deleted. */
+  await rp.evaluate(() => {
+    const k = "quick|general";
+    localStorage.setItem("hisig26_notes", JSON.stringify({
+      [k]: { key: k, type: "quick", entityId: "general",
+             text: "https://example.org/" + "a".repeat(280),
+             createdAt: Date.now(), updatedAt: Date.now() }
+    }));
+  });
+  await rp.reload({ waitUntil: "networkidle" });
+  await rp.click("#tab-notes");
+  await rp.waitForTimeout(200);
+  const wide = await rp.evaluate(() => ({
+    over: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    zoomed: window.innerWidth !== 390
+  }));
+  check("a long unbroken URL in a note does not overflow the page",
+    !wide.over && !wide.zoomed, JSON.stringify(wide));
+
+  /* body.locked used to be overflow:hidden, which collapses the viewport's
+     scroll range and clamps the offset to 0 -- opening Export threw you to the
+     top of your own notes. Click via the DOM: page.click() scrolls the button
+     into view first and would hide the bug. */
+  await rp.evaluate(() => {
+    const n = {};
+    for (let i = 0; i < 12; i++) {
+      const k = `quick|n${i}`;
+      n[k] = { key: k, type: "quick", entityId: `n${i}`, text: `note ${i}`,
+               createdAt: Date.now(), updatedAt: Date.now() };
+    }
+    localStorage.setItem("hisig26_notes", JSON.stringify(n));
+  });
+  await rp.reload({ waitUntil: "networkidle" });
+  await rp.click("#tab-notes");
+  await rp.waitForTimeout(200);
+  await rp.evaluate(() => window.scrollTo(0, 700));
+  const wasAt = await rp.evaluate(() => window.scrollY);
+  await rp.evaluate(() => document.querySelector("#export-btn").click());
+  await rp.waitForTimeout(200);
+  const locked = await rp.evaluate(() =>
+    document.documentElement.scrollHeight <= window.innerHeight + 1);
+  await rp.evaluate(() => document.querySelector("#export-close").click());
+  await rp.waitForTimeout(300);
+  const backAt = await rp.evaluate(() => window.scrollY);
+  check("opening and closing a modal keeps your scroll position",
+    Math.abs(backAt - wasAt) < 5, `${wasAt} -> ${backAt}`);
+  /* The other half: the page behind the dialog must not be scrollable at all,
+     which is what position:fixed buys over a bare overflow:hidden. */
+  check("the page behind an open modal cannot scroll", locked);
+
+  /* --stick drives scroll-margin and the skip link; a hard-coded value drifts
+     the moment the header changes. */
+  const stick = await rp.evaluate(() => ({
+    real: Math.round(document.querySelector(".site").getBoundingClientRect().height),
+    varr: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--stick"))
+  }));
+  check("--stick matches the real header height",
+    Math.abs(stick.real - stick.varr) <= 1, `header=${stick.real} --stick=${stick.varr}`);
+
+  await ctx.close();
+}
+
+/* -- the smallest phone anyone will bring ---------------------------------- */
+{
+  const ctx = await browser.newContext({ viewport: { width: 320, height: 568 } });
+  const sm = await ctx.newPage();
+  await sm.goto(BASE, { waitUntil: "networkidle" });
+  await sm.evaluate(() => document.fonts.ready);
+  const bare = await sm.evaluate(() => document.querySelector(".site").getBoundingClientRect().height);
+
+  /* Saving one note adds a count pill. It used to not fit beside "NOTES",
+     wrapped to a second line, and grew the sticky header permanently. */
+  await sm.evaluate(() => {
+    const k = "quick|general";
+    localStorage.setItem("hisig26_notes", JSON.stringify({
+      [k]: { key: k, type: "quick", entityId: "general", text: "hi",
+             createdAt: Date.now(), updatedAt: Date.now() }
+    }));
+  });
+  await sm.reload({ waitUntil: "networkidle" });
+  await sm.evaluate(() => document.fonts.ready);
+  const withPill = await sm.evaluate(() => document.querySelector(".site").getBoundingClientRect().height);
+  check("the note count pill does not grow the header at 320px",
+    Math.abs(withPill - bare) < 2, `${bare.toFixed(1)} -> ${withPill.toFixed(1)}`);
+
+  /* An input whose placeholder is cut off is the first thing a person reads. */
+  const ph = await sm.evaluate(() => {
+    const i = document.querySelector("#q");
+    const cs = getComputedStyle(i);
+    const cv = document.createElement("canvas").getContext("2d");
+    cv.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    return { box: i.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+             text: cv.measureText(i.placeholder).width };
+  });
+  check("the search placeholder fits at 320px",
+    ph.text <= ph.box, `text=${Math.round(ph.text)} box=${Math.round(ph.box)}`);
+
+  const smOverflow = await sm.evaluate(() =>
+    document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  check("no horizontal overflow at 320px", !smOverflow);
+  await ctx.close();
+}
+
 /* -- live badges, with the clock moved into the event ---------------------- */
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
