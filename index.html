@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/vollkorn-var-subset.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -26,7 +27,6 @@
     <p class="brand-sub">
       <span data-bind="event.dates"></span> · <span data-bind="event.location"></span>
     </p>
-    <p class="theme" data-bind="event.tagline"></p>
   </div>
   <nav class="tabs wrap" role="tablist" aria-label="Sections">
     <button class="tab" id="tab-program"  role="tab" aria-controls="panel-program"  aria-selected="true">Program</button>
@@ -42,6 +42,8 @@
   <!-- ── PROGRAM ────────────────────────────────────────────────────────── -->
   <section class="panel" id="panel-program" role="tabpanel" aria-labelledby="tab-program">
     <div class="wrap">
+
+      <p class="masthead" data-bind="event.tagline"></p>
 
       <div class="controls">
         <div class="days" role="tablist" aria-label="Program days"></div>

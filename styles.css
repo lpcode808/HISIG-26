@@ -1,5 +1,28 @@
 /* Conference program app. Theme lives in the custom properties below;
-   dark mode is derived from the same set. */
+   dark mode is derived from the same set.
+
+   TYPE. Two families, on purpose:
+     --font-display  Vollkorn, self-hosted from fonts/. Brand, headings,
+                     session titles, speaker names, time labels. Variable
+                     weight 400-900, with real small caps.
+     --font-ui       the device's own sans. Body copy, every control, every
+                     bit of chrome. Costs nothing to load.
+   The contrast between the two is the design. Do not put the display face on
+   buttons, inputs or metadata -- it stops meaning anything if it is everywhere.
+
+   The scale below is a ~1.2 ratio anchored at 1rem. Sizes are deliberately far
+   apart; the previous version ran everything between .86rem and 1.02rem, which
+   is why nothing read as more important than anything else. */
+
+@font-face {
+  font-family: "Vollkorn";
+  src: url("fonts/vollkorn-var-subset.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+  /* Latin + Latin Ext-A + the okina. See fonts/README.md before widening. */
+  unicode-range: U+0000-00FF, U+0100-017F, U+02BB-02BC, U+2000-206F, U+00D7, U+2212;
+}
 
 :root {
   --ink:        #14181f;
@@ -14,7 +37,21 @@
   --radius:     10px;
   --wrap:       1060px;
   --tap:        44px;   /* minimum touch target */
-  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --stick:      112px;  /* sticky header height; drives scroll-margin-top */
+
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Vollkorn", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --font: var(--font-ui);   /* kept: older rules still reference it */
+
+  /* type scale */
+  --t-micro:   .6875rem;  /* 11px - tracked small caps labels, badges */
+  --t-fine:    .8125rem;  /* 13px - captions, link rows, sponsor lines */
+  --t-small:   .875rem;   /* 14px - metadata, counts, secondary UI */
+  --t-body:    1rem;      /* 16px - body copy and all controls */
+  --t-lead:    1.125rem;  /* 18px - speaker names, lead-in copy */
+  --t-title:   1.25rem;   /* 20px - session titles */
+  --t-section: 1.5rem;    /* 24px - section headings */
+  --t-brand:   1.625rem;  /* 26px - the wordmark */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,20 +79,34 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.55 var(--font);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  line-height: 1.6;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
 }
 body.locked { overflow: hidden; }
 
-h1, h2, h3 { line-height: 1.25; margin: 0; letter-spacing: -0.012em; }
-p { margin: 0 0 .6rem; }
+h1, h2, h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -0.018em;
+  /* Vollkorn ships real weights 400-900 and no italic. Never let the browser
+     fake either -- a synthesised oblique serif looks broken. */
+  font-synthesis: none;
+  text-wrap: balance;
+}
+p { margin: 0 0 .6rem; text-wrap: pretty; }
 a { color: var(--accent); }
 
 .wrap { width: min(100% - 2rem, var(--wrap)); margin-inline: auto; }
 .muted { color: var(--ink-soft); }
-.small { font-size: .86rem; }
-.strong { font-weight: 650; }
+.small { font-size: var(--t-small); }
+.strong { font-weight: 600; }
+/* Opt any element into the display face without repeating the stack. */
+.display { font-family: var(--font-display); font-synthesis: none; }
 
 .sr {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -83,29 +134,48 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   border-bottom: 1px solid var(--line);
   padding-top: env(safe-area-inset-top);
 }
+/* The conference theme moved out of this sticky bar and into the program as a
+   masthead line. It used to cost a third row of sticky height on every screen
+   of every tab, all day, to say the same seven words. */
 .bar {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: .75rem; flex-wrap: wrap; padding: .7rem 0 .5rem;
+  gap: .1rem .75rem; flex-wrap: wrap; padding: .75rem 0 .6rem;
 }
-.brand { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; }
-.brand-mark { width: 11px; height: 11px; border-radius: 3px; background: var(--accent); flex: none; }
-.brand-sub { margin: 0; font-size: .82rem; color: var(--ink-soft); }
-.theme {
-  flex-basis: 100%; margin: .15rem 0 0; font-size: .82rem;
-  color: var(--accent); font-weight: 650;
+.brand {
+  display: inline-flex; align-items: baseline; gap: .45rem;
+  font-family: var(--font-display); font-weight: 800;
+  font-size: var(--t-brand); line-height: 1.05; letter-spacing: -0.028em;
+  font-synthesis: none;
 }
+.brand-mark {
+  width: .42em; height: .42em; border-radius: 2px;
+  background: var(--accent); flex: none;
+}
+.brand-sub { margin: 0; font-size: var(--t-small); color: var(--ink-soft); }
 
 .tabs { display: flex; gap: .25rem; }
 .tab {
   flex: 1; min-height: var(--tap); cursor: pointer;
   background: none; border: 0; border-bottom: 2px solid transparent;
-  padding: .5rem .4rem; color: var(--ink-soft); font-size: .95rem;
+  padding: .5rem .3rem; color: var(--ink-soft);
+  font-size: var(--t-small); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em;
 }
-.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 650; }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
 .pill {
-  display: inline-block; min-width: 20px; padding: 0 .35rem; margin-left: .2rem;
+  display: inline-block; min-width: 19px; padding: 0 .3rem; margin-left: .25rem;
   background: var(--accent); color: var(--accent-ink);
-  border-radius: 99px; font-size: .74rem; line-height: 1.5; font-weight: 700;
+  border-radius: 99px; font-size: var(--t-micro); line-height: 1.6; font-weight: 700;
+  letter-spacing: 0; font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Masthead line at the top of the program: the conference theme, given the
+   room it could not have while it lived in the sticky header. */
+.masthead {
+  margin: 0 0 1.4rem;
+  font-family: var(--font-display); font-weight: 600;
+  font-size: var(--t-section); line-height: 1.2; letter-spacing: -0.02em;
+  color: var(--accent); font-synthesis: none; text-wrap: balance;
 }
 
 .panel { padding: 1.25rem 0 4rem; }
@@ -125,7 +195,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   background: var(--accent); border-color: var(--accent);
   color: var(--accent-ink); font-weight: 650;
 }
-.day-date { display: block; font-size: .78rem; opacity: .85; font-weight: 400; }
+.day-date { display: block; font-size: var(--t-fine); opacity: .85; font-weight: 400; }
 
 .filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: stretch; }
 .search { flex: 1 1 240px; display: flex; }
@@ -146,7 +216,10 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   color: var(--accent-ink); font-weight: 650;
 }
 
-.count { color: var(--ink-soft); font-size: .86rem; margin-bottom: .8rem; }
+.count {
+  color: var(--ink-soft); font-size: var(--t-small); margin-bottom: .9rem;
+  font-variant-numeric: lining-nums tabular-nums;
+}
 .empty { color: var(--ink-soft); padding: 2rem 0; }
 
 /* ── buttons ─────────────────────────────────────────────────────────── */
@@ -160,7 +233,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 }
 .btn:hover:not(:disabled) { filter: brightness(1.08); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn.small { min-height: 36px; padding: .3rem .8rem; font-size: .88rem; }
+.btn.small { min-height: 36px; padding: .3rem .8rem; font-size: var(--t-small); }
 .btn.ghost { background: var(--bg); color: var(--ink); border-color: var(--line); }
 .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn.ghost.danger { background: var(--bg); color: var(--danger); border-color: var(--line); }
@@ -170,7 +243,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   color: var(--accent); font-size: inherit; text-decoration: underline;
   text-underline-offset: 2px;
 }
-.linkish.danger { color: var(--danger); font-size: .86rem; }
+.linkish.danger { color: var(--danger); font-size: var(--t-small); }
 
 .icon-btn {
   min-width: var(--tap); min-height: var(--tap); cursor: pointer;
@@ -188,17 +261,28 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 
 .slot { border-top: 1px solid var(--line); padding: 1rem 0; }
 .slot:first-child { border-top: 0; padding-top: 0; }
+/* The hour, set in real small caps with a rule running out to the margin --
+   the one move that makes this read like a printed programme rather than a
+   list of divs. `all-small-caps` needs both smcp and c2sc, which is why the
+   subset in fonts/ keeps them. */
 .slot-time {
-  font-size: .78rem; text-transform: uppercase; letter-spacing: .07em;
-  color: var(--ink-soft); margin-bottom: .6rem;
+  display: flex; align-items: center; gap: .7rem;
+  margin-bottom: .75rem;
+  font-family: var(--font-display); font-weight: 600;
+  font-size: var(--t-lead); line-height: 1.1;
+  font-variant-caps: all-small-caps;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: .05em; color: var(--ink);
+  font-synthesis: none;
 }
+.slot-time::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--line); }
 .slot-body { display: grid; gap: .65rem; }
 
 .session {
   display: grid; grid-template-columns: 100px 1fr; gap: .9rem;
   padding: .85rem 1rem; background: var(--bg);
   border: 1px solid var(--line); border-radius: var(--radius);
-  scroll-margin-top: 130px;
+  scroll-margin-top: calc(var(--stick) + .75rem);
 }
 .session.plenary { border-left: 3px solid var(--accent); }
 .session.break { opacity: .75; }
@@ -209,32 +293,51 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   100% { background: var(--bg); }
 }
 
-.when { font-variant-numeric: tabular-nums; font-size: .86rem; color: var(--ink-soft); }
-.when .start { display: block; font-weight: 650; color: var(--ink); }
+.when {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--t-small); color: var(--ink-soft);
+}
+.when .start { display: block; font-weight: 650; color: var(--ink); letter-spacing: -0.01em; }
 .when .end { display: block; }
-.when .utc { display: block; margin-top: .2rem; font-size: .74rem; opacity: .8; }
+.when .utc { display: block; margin-top: .2rem; font-size: var(--t-micro); opacity: .85; }
 
 .status-badge {
   display: inline-block; margin-top: .3rem; padding: .1rem .45rem;
-  border-radius: 99px; font-size: .68rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .05em;
+  border-radius: 99px; font-size: var(--t-micro); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em; line-height: 1.6;
 }
 .status-badge.is-now { background: var(--accent); color: var(--accent-ink); }
 .status-badge.is-next { background: var(--bg-alt); color: var(--ink-soft); border: 1px solid var(--line); }
 
 .s-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
-.s-head h3 { font-size: 1.02rem; }
-.title { font-size: 1.02rem; }
-.people { font-size: .9rem; color: var(--ink-soft); margin: .2rem 0 .35rem; }
+/* Session titles carry the page. They were 1.02rem next to 1rem body copy,
+   which is a difference you cannot see. */
+.s-head h3, .title {
+  font-size: var(--t-title); font-weight: 700;
+  line-height: 1.15; letter-spacing: -0.022em;
+}
+/* Breaks and registration are scaffolding, not programme. Same family, lower
+   voice, so the eye skips them on the way to the next real session. */
+.session.break .title { font-size: var(--t-lead); font-weight: 600; letter-spacing: -0.012em; }
+.people { font-size: var(--t-small); line-height: 1.45; color: var(--ink-soft); margin: .3rem 0 .45rem; }
 .meta { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
-.tag, .room, .chip {
-  font-size: .74rem; padding: .14rem .5rem; border-radius: 99px;
+.tag, .room {
+  font-size: var(--t-micro); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em; line-height: 1.6;
+  padding: .16rem .5rem; border-radius: 99px;
   border: 1px solid var(--line); color: var(--ink-soft);
 }
 .tag { border-color: var(--accent); color: var(--accent); }
 
-.chips { display: flex; gap: .35rem; flex-wrap: wrap; margin: .5rem 0; }
-.chip { background: var(--bg-alt); cursor: pointer; }
+/* Chips hold whole session titles, so they stay sentence case and readable --
+   the uppercase micro-label treatment above would wreck them. */
+.chips { display: flex; gap: .35rem; flex-wrap: wrap; margin: .6rem 0; }
+.chip {
+  font-size: var(--t-small); line-height: 1.35; text-align: left;
+  padding: .32rem .65rem; border-radius: 99px;
+  border: 1px solid var(--line); color: var(--ink-soft);
+  background: var(--bg-alt); cursor: pointer;
+}
 .chip:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── expandable details + note editor ────────────────────────────────── */
@@ -242,8 +345,10 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 .expand { margin-top: .55rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .expand summary {
   display: flex; align-items: center; gap: .4rem;
-  min-height: 34px; cursor: pointer; list-style: none;
-  color: var(--accent); font-size: .87rem; width: fit-content;
+  min-height: var(--tap); cursor: pointer; list-style: none;
+  color: var(--accent); width: fit-content;
+  font-size: var(--t-micro); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
 }
 .expand summary::-webkit-details-marker { display: none; }
 .expand-label::before { content: "+ "; }
@@ -255,17 +360,20 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 }
 summary.has-note .note-dot { display: block; }
 
-.abstract, .summary { font-size: .92rem; color: var(--ink-soft); margin: .5rem 0 0; }
+.abstract, .summary {
+  font-size: var(--t-small); line-height: 1.65;
+  color: var(--ink-soft); margin: .6rem 0 0; max-width: 68ch;
+}
 /* Outbound links inherit the surrounding size so they don't shout inside a
    muted affiliation line or an italic sponsor credit. */
 .ext { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .ext:hover, .ext:focus-visible { color: var(--accent); }
 
-.links { font-size: .82rem; margin: .4rem 0 0; color: var(--ink-soft); }
+.links { font-size: var(--t-fine); margin: .5rem 0 0; color: var(--ink-soft); }
 .links .ext { color: var(--accent); }
 
-.sponsor { font-size: .78rem; color: var(--ink-soft); margin: .4rem 0 0; font-style: italic; }
-.sponsors { margin: .5rem 0 .75rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: .86rem; }
+.sponsor { font-size: var(--t-fine); color: var(--ink-soft); margin: .45rem 0 0; font-style: italic; }
+.sponsors { margin: .5rem 0 .75rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: var(--t-small); }
 .sponsors li { margin-bottom: .15rem; }
 .summary { color: var(--ink); }
 
@@ -289,9 +397,13 @@ summary.has-note .note-dot { display: block; }
 .speaker {
   background: var(--bg); border: 1px solid var(--line);
   border-radius: var(--radius); padding: .95rem 1rem;
-  scroll-margin-top: 130px;
+  scroll-margin-top: calc(var(--stick) + .75rem);
 }
-.speaker .bio { font-size: .9rem; color: var(--ink-soft); }
+/* On this tab the name IS the headline, so it takes the session-title size and
+   the affiliation drops to metadata. At 18px over 16px they read as equals. */
+.speaker .s-head h3 { font-size: var(--t-title); letter-spacing: -0.022em; }
+.speaker > .muted { font-size: var(--t-small); line-height: 1.5; margin-bottom: .35rem; }
+.speaker .bio { font-size: var(--t-small); line-height: 1.6; color: var(--ink-soft); max-width: 68ch; }
 
 /* ── notes tab ───────────────────────────────────────────────────────── */
 
@@ -322,13 +434,13 @@ summary.has-note .note-dot { display: block; }
 }
 .note-card.session { border-left-color: var(--accent); }
 .note-card.speaker { border-left-color: var(--star); }
-.note-card h3 { font-size: 1rem; margin-top: .2rem; }
+.note-card h3 { font-size: var(--t-lead); margin-top: .25rem; }
 .note-text { white-space: pre-wrap; margin: .5rem 0 .4rem; }
 
 .venue-block {
   margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
 }
-.venue-block h2 { font-size: 1.15rem; margin-bottom: .5rem; }
+.venue-block h2, .notes-head h2 { font-size: var(--t-section); margin-bottom: .55rem; }
 
 /* ── modals + toast ──────────────────────────────────────────────────── */
 
@@ -345,15 +457,18 @@ summary.has-note .note-dot { display: block; }
   display: flex; align-items: center; justify-content: space-between;
   gap: .5rem; margin-bottom: .5rem;
 }
-.modal-head h2 { font-size: 1.1rem; }
+.modal-head h2 { font-size: var(--t-section); }
 .modal textarea, .modal input[type="text"] {
   width: 100%; padding: .6rem .7rem; margin-top: .5rem;
   background: var(--bg-alt); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius);
 }
-.modal textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; resize: vertical; }
+.modal textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.6; resize: vertical;
+}
 .modal-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
-.confirm-label { display: block; margin-top: .6rem; font-size: .9rem; }
+.confirm-label { display: block; margin-top: .7rem; font-size: var(--t-small); }
 
 .toast {
   position: fixed; left: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom));
@@ -363,6 +478,7 @@ summary.has-note .note-dot { display: block; }
   opacity: 0; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast { font-weight: 600; }
 
 .site-footer { border-top: 1px solid var(--line); padding: 1.25rem 0 2rem; }
 
