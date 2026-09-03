@@ -85,7 +85,11 @@ body {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
 }
-body.locked { overflow: hidden; }
+/* position:fixed, not just overflow:hidden. On its own, overflow:hidden
+   collapses the viewport's scroll range and clamps scrollY to 0, so opening
+   any modal threw you back to the top of your own notes. app.js pins `top` to
+   the saved offset and restores it on close. */
+body.locked { position: fixed; inset-inline: 0; overflow: hidden; }
 
 h1, h2, h3 {
   margin: 0;
@@ -101,7 +105,13 @@ h1, h2, h3 {
 p { margin: 0 0 .6rem; text-wrap: pretty; }
 a { color: var(--accent); }
 
-.wrap { width: min(100% - 2rem, var(--wrap)); margin-inline: auto; }
+/* viewport-fit=cover opts the page into the display cutout, so landscape on a
+   notched phone needs more than the 1rem side margin. Both env() values are 0
+   everywhere else. */
+.wrap {
+  width: min(100% - 2rem, var(--wrap)); margin-inline: auto;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
 .muted { color: var(--ink-soft); }
 .small { font-size: var(--t-small); }
 .strong { font-weight: 600; }
@@ -178,6 +188,9 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   color: var(--accent); font-synthesis: none; text-wrap: balance;
 }
 
+/* app.js keeps --stick equal to the real header height; the literal in :root
+   is only the value used before it runs. */
+#main { scroll-margin-top: calc(var(--stick) + .75rem); }
 .panel { padding: 1.25rem 0 4rem; }
 
 /* ── controls ────────────────────────────────────────────────────────── */
@@ -233,13 +246,17 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 }
 .btn:hover:not(:disabled) { filter: brightness(1.08); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn.small { min-height: 36px; padding: .3rem .8rem; font-size: var(--t-small); }
+.btn.small { min-height: var(--tap); padding: .3rem .8rem; font-size: var(--t-small); }
 .btn.ghost { background: var(--bg); color: var(--ink); border-color: var(--line); }
 .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn.ghost.danger { background: var(--bg); color: var(--danger); border-color: var(--line); }
 
+/* These are the main route from "who is that?" to the bio, and they were 20px
+   tall. Padded to ~40px inside the roomier .people line box below; the
+   negative margin keeps the text where it was. */
 .linkish {
-  background: none; border: 0; padding: 0; cursor: pointer;
+  background: none; border: 0; cursor: pointer;
+  padding: .45rem .15rem; margin: 0 -.15rem;
   color: var(--accent); font-size: inherit; text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -250,12 +267,15 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   background: none; border: 0; color: var(--ink-soft); font-size: 1.1rem;
 }
 
+/* Was var(--line) -- 1.28:1 on white, a smudge. Saving is half the app; the
+   control has to be visible before it is tapped. */
 .star {
   min-width: var(--tap); min-height: var(--tap); flex: none; cursor: pointer;
-  background: none; border: 0; color: var(--line); font-size: 1.3rem; line-height: 1;
+  background: none; border: 0; font-size: 1.3rem; line-height: 1;
+  color: var(--ink-soft); opacity: .5;
 }
-.star:hover { color: var(--star); }
-.star.on { color: var(--star); }
+.star:hover { color: var(--star); opacity: 1; }
+.star.on { color: var(--star); opacity: 1; }
 
 /* ── schedule ────────────────────────────────────────────────────────── */
 
@@ -319,7 +339,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 /* Breaks and registration are scaffolding, not programme. Same family, lower
    voice, so the eye skips them on the way to the next real session. */
 .session.break .title { font-size: var(--t-lead); font-weight: 600; letter-spacing: -0.012em; }
-.people { font-size: var(--t-small); line-height: 1.45; color: var(--ink-soft); margin: .3rem 0 .45rem; }
+.people { font-size: var(--t-small); line-height: 2.1; color: var(--ink-soft); margin: .3rem 0 .45rem; }
 .meta { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
 .tag, .room {
   font-size: var(--t-micro); font-weight: 700;
@@ -331,7 +351,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 
 /* Chips hold whole session titles, so they stay sentence case and readable --
    the uppercase micro-label treatment above would wreck them. */
-.chips { display: flex; gap: .35rem; flex-wrap: wrap; margin: .6rem 0; }
+.chips { display: flex; gap: .55rem; flex-wrap: wrap; margin: .6rem 0; }
 .chip {
   font-size: var(--t-small); line-height: 1.35; text-align: left;
   padding: .32rem .65rem; border-radius: 99px;
@@ -379,7 +399,7 @@ summary.has-note .note-dot { display: block; }
 
 .note-editor { margin-top: .6rem; }
 .note-editor textarea {
-  width: 100%; padding: .55rem .7rem; resize: vertical;
+  width: 100%; padding: .55rem .7rem; resize: none; max-height: 50vh; overflow-y: auto;
   background: var(--bg-alt); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius);
 }
@@ -441,8 +461,11 @@ summary.has-note .note-dot { display: block; }
   margin: 1rem 0; padding: .9rem 1rem;
   background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius);
 }
+/* resize:vertical is a mouse affordance; on a phone the handle is untouchable
+   and you end up writing a session's worth of notes through a 3-line window.
+   app.js grows these to fit instead. */
 .composer textarea {
-  width: 100%; padding: .55rem .7rem; resize: vertical;
+  width: 100%; padding: .55rem .7rem; resize: none; max-height: 50vh; overflow-y: auto;
   background: var(--bg); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius);
 }
@@ -459,7 +482,12 @@ summary.has-note .note-dot { display: block; }
 .note-card.session { border-left-color: var(--accent); }
 .note-card.speaker { border-left-color: var(--star); }
 .note-card h3 { font-size: var(--t-lead); margin-top: .25rem; }
-.note-text { white-space: pre-wrap; margin: .5rem 0 .4rem; }
+/* A pasted URL is one unbroken string. Without this it ran off the card, off
+   the screen, and gave the whole document horizontal overflow that persisted
+   until the note was deleted. */
+.note-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0 .4rem; }
+/* Same guard wherever data.js or an attendee can put a long token in a fixed box. */
+.abstract, .summary, .bio, .chip, .title, .s-head h3, .people, .links { overflow-wrap: anywhere; }
 
 .venue-block {
   margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
@@ -473,8 +501,10 @@ summary.has-note .note-dot { display: block; }
   display: flex; align-items: center; justify-content: center; padding: 1rem;
   background: rgba(0, 0, 0, .55);
 }
+/* dvh follows the visual viewport, so the dialog shrinks when the on-screen
+   keyboard opens instead of running off the bottom. vh first for old engines. */
 .modal {
-  width: min(100%, 560px); max-height: 88vh; overflow-y: auto;
+  width: min(100%, 560px); max-height: 88vh; max-height: 88dvh; overflow-y: auto;
   background: var(--bg); border-radius: 14px; padding: 1.25rem;
 }
 .modal-head {
@@ -489,9 +519,18 @@ summary.has-note .note-dot { display: block; }
 }
 .modal textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px; line-height: 1.6; resize: vertical;
+  font-size: 13px; line-height: 1.6; resize: vertical; max-height: 42vh;
 }
-.modal-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .9rem; }
+/* Pinned to the bottom of the dialog. In landscape the export textarea pushed
+   Copy / Share / Download entirely off-screen, and the only way to scroll to
+   them was a drag on the 157px of header above the textarea. The negative
+   offset cancels .modal's padding so it sits flush. */
+.modal-actions {
+  position: sticky; bottom: -1.25rem; z-index: 1;
+  display: flex; gap: .5rem; flex-wrap: wrap;
+  margin-top: .9rem; padding: .7rem 0 .35rem; background: var(--bg);
+  border-top: 1px solid var(--line);
+}
 .confirm-label { display: block; margin-top: .7rem; font-size: var(--t-small); }
 
 /* Not a pill: the longest messages ("Could not save -- browser storage is
@@ -510,12 +549,29 @@ summary.has-note .note-dot { display: block; }
   opacity: 0; transition: opacity .2s ease, transform .2s ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast-action {
+  margin-left: .75rem; padding: .15rem .5rem; cursor: pointer;
+  background: none; border: 1px solid currentColor; border-radius: 6px;
+  color: inherit; font-size: var(--t-small); font-weight: 700;
+}
 
 .site-footer { border-top: 1px solid var(--line); padding: 1.25rem 0 2rem; }
 
 /* ── small screens ───────────────────────────────────────────────────── */
 
 @media (max-width: 620px) {
+  /* The search string needs 269px and never got it while sharing a row with
+     "★ Saved"; the placeholder lost its last word at 390px, the commonest
+     phone width in the room. */
+  .filters .search { flex: 1 1 100%; }
+
+  /* Saving one note added a count pill that would not fit beside "NOTES" at
+     320px, so the pill dropped to a second line and the sticky header grew
+     19px permanently. */
+  .tabs { gap: .1rem; }
+  .tab { padding-inline: .15rem; white-space: nowrap; letter-spacing: .06em; }
+  .pill { margin-left: .2rem; }
+
   .session { grid-template-columns: 1fr; gap: .3rem; }
   .when { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }
   .when .start::after { content: " –"; }
@@ -527,4 +583,7 @@ summary.has-note .note-dot { display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
+  /* The blanket rule above kills the .flash highlight, which is the only
+     "you landed here" cue after a cross-navigation. Swap in a static outline. */
+  .session.flash, .speaker.flash { outline: 2px solid var(--accent); outline-offset: 2px; }
 }

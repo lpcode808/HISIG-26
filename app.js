@@ -113,16 +113,38 @@
   /* ── toast ───────────────────────────────────────────────────────────── */
 
   let toastTimer;
-  function toast(msg) {
+
+  function hideToast() {
     const node = $("#toast");
-    node.textContent = msg;
+    node.classList.remove("show");
+    setTimeout(() => { node.hidden = true; }, 200);
+  }
+
+  /* `action` is optional: { label, run }. It buys the message longer on screen,
+     since a 2.2s undo is not an undo. */
+  function toast(msg, action) {
+    const node = $("#toast");
+    node.textContent = "";
+    node.append(el("span", { textContent: msg }));
+    if (action) {
+      const btn = el("button",
+        { className: "toast-action", type: "button", textContent: action.label });
+      btn.addEventListener("click", () => { clearTimeout(toastTimer); hideToast(); action.run(); });
+      node.append(btn);
+    }
     node.hidden = false;
     node.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      node.classList.remove("show");
-      setTimeout(() => { node.hidden = true; }, 200);
-    }, 2200);
+    toastTimer = setTimeout(hideToast, action ? 7000 : 2200);
+  }
+
+  /* A phone has no drag handle, so resize:vertical is dead weight. Grow the
+     box to its content instead; styles.css caps it at 50vh. */
+  function autogrow(ta) {
+    const fit = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+    ta.addEventListener("input", fit);
+    requestAnimationFrame(fit);
+    return ta;
   }
 
   /* Plenty of attendees will star and type all day from the programme cards
@@ -194,7 +216,15 @@
 
   const TABS = ["program", "speakers", "notes"];
 
+  /* Each tab remembers where you were. Resetting all three to the top meant an
+     attendee glancing at a note lost their place in the programme and had to
+     scroll back past eleven sessions -- dozens of times over a conference day.
+     openSession/openSpeaker still call reveal() afterwards, so deep links win. */
+  const tabScroll = { program: 0, speakers: 0, notes: 0 };
+  let currentTab = "program";
+
   function activateTab(name) {
+    if (name !== currentTab) tabScroll[currentTab] = window.scrollY;
     TABS.forEach((t) => {
       const on = t === name;
       $(`#tab-${t}`).setAttribute("aria-selected", String(on));
@@ -202,7 +232,17 @@
       $(`#panel-${t}`).hidden = !on;
     });
     if (name === "notes") renderNotes();
-    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    const y = name === currentTab ? window.scrollY : tabScroll[name];
+    currentTab = name;
+    window.scrollTo({ top: y, behavior: "instant" in window ? "instant" : "auto" });
+  }
+
+  /* --stick is the sticky header's real height. The literal in styles.css was a
+     guess and matched no width; anything anchoring to it (scroll-margin, the
+     skip link) was off by up to 47px. */
+  function syncStick() {
+    const h = $(".site").getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--stick", `${Math.round(h)}px`);
   }
 
   function wireTabs() {
@@ -230,6 +270,7 @@
       value: existing ? existing.text : ""
     });
     ta.setAttribute("aria-label", "Your notes for this item");
+    autogrow(ta);
 
     const meta = el("span", { className: "muted small" },
       existing ? `Saved ${relative(existing.updatedAt)}` : "");
@@ -302,6 +343,7 @@
       star.classList.toggle("on", isStarred("session", s.id));
       star.addEventListener("click", () => {
         const on = toggleStar("session", s.id);
+        toast(on ? "Saved" : "Removed from saved");
         star.classList.toggle("on", on);
         star.setAttribute("aria-pressed", String(on));
         if (program.starredOnly) renderProgram();
@@ -373,6 +415,9 @@
     mount.textContent = "";
 
     $("#empty").hidden = list.length > 0;
+    $("#empty").textContent = program.starredOnly && !stars.size
+      ? "Nothing saved yet. Tap ★ on a session to keep it here."
+      : "No sessions match that filter.";
     $("#count").textContent = list.length
       ? `${list.length} ${list.length === 1 ? "session" : "sessions"}`
       : "";
@@ -466,6 +511,7 @@
     star.classList.toggle("on", isStarred("speaker", p.id));
     star.addEventListener("click", () => {
       const on = toggleStar("speaker", p.id);
+      toast(on ? "Saved" : "Removed from saved");
       star.classList.toggle("on", on);
       star.setAttribute("aria-pressed", String(on));
       if (speakerState.starredOnly) renderSpeakers();
@@ -515,6 +561,9 @@
     const mount = $("#speakers-list");
     mount.textContent = "";
     $("#speakers-empty").hidden = list.length > 0;
+    $("#speakers-empty").textContent = speakerState.starredOnly && !stars.size
+      ? "Nothing saved yet. Tap ★ on a speaker to keep them here."
+      : "No speakers match that search.";
     $("#speaker-count").textContent = list.length
       ? `${list.length} ${list.length === 1 ? "speaker" : "speakers"}`
       : "";
@@ -571,7 +620,8 @@
     requestAnimationFrame(() => {
       const node = $(selector);
       if (!node) return;
-      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      node.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
       node.classList.add("flash");
       setTimeout(() => node.classList.remove("flash"), 1600);
     });
@@ -626,12 +676,22 @@
 
     const del = el("button", { className: "btn small ghost danger", type: "button", textContent: "Delete" });
     del.addEventListener("click", () => {
+      /* Clear-all makes you type a phrase; deleting one note took a single tap
+         and was just as unrecoverable. Undo rather than a second confirm --
+         one tap is the right cost, losing the note is not. */
+      const removed = notes[n.key];
       delete notes[n.key];
       store.write(K.notes, notes);
       syncNoteCount();
       renderNotes();
       syncNoteMarkers();
-      toast("Note deleted");
+      toast("Note deleted", { label: "Undo", run: () => {
+        notes[removed.key] = removed;
+        store.write(K.notes, notes);
+        syncNoteCount();
+        renderNotes();
+        syncNoteMarkers();
+      } });
     });
     card.append(del);
 
@@ -671,6 +731,7 @@
       else toastNoteSaved();
       renderNotes();
     });
+    autogrow($("#quick-note"));
     $("#notes-q").addEventListener("input", debounce((e) => {
       notesState.query = norm(e.target.value.trim());
       renderNotes();
@@ -719,11 +780,17 @@
   /* ── modals ──────────────────────────────────────────────────────────── */
 
   let lastFocus = null;
+  let lockedY = 0;
 
+  /* body.locked is position:fixed, which zeroes the page offset. Pin `top` to
+     where the reader was and put it back on close, or opening Export costs
+     them their place in their own notes every single time. */
   function openModal(id) {
     lastFocus = document.activeElement;
     const overlay = $(`#${id}`);
     overlay.hidden = false;
+    lockedY = window.scrollY;
+    document.body.style.top = `-${lockedY}px`;
     document.body.classList.add("locked");
     const focusable = $("button, textarea, input", overlay);
     if (focusable) focusable.focus();
@@ -732,7 +799,23 @@
   function closeModal(id) {
     $(`#${id}`).hidden = true;
     document.body.classList.remove("locked");
+    document.body.style.top = "";
+    window.scrollTo({ top: lockedY, behavior: "instant" in window ? "instant" : "auto" });
     if (lastFocus) lastFocus.focus();
+  }
+
+  /* aria-modal="true" is a promise the markup could not keep on its own: focus
+     walked straight out of the dialog into the page behind it. */
+  function trapFocus(e) {
+    if (e.key !== "Tab") return;
+    const open = $$(".overlay").find((o) => !o.hidden);
+    if (!open) return;
+    const f = $$("button:not([hidden]):not(:disabled), textarea, input", open)
+      .filter((n) => n.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 
   function wireModals() {
@@ -784,7 +867,11 @@
     $("#clear-close").addEventListener("click", () => closeModal("clear-modal"));
     $("#clear-cancel").addEventListener("click", () => closeModal("clear-modal"));
     $("#clear-input").addEventListener("input", (e) => {
-      $("#clear-confirm").disabled = e.target.value.trim().toLowerCase() !== PHRASE;
+      const ok = e.target.value.trim().toLowerCase() === PHRASE;
+      $("#clear-confirm").disabled = !ok;
+      /* With the keyboard up the confirm button sits below the fold and the
+         dialog looks finished without it. */
+      if (ok) $("#clear-confirm").scrollIntoView({ block: "nearest" });
     });
     $("#clear-confirm").addEventListener("click", () => {
       notes = {};
@@ -919,6 +1006,13 @@
   renderProgram();
   renderSpeakers();
   renderNotes();
+
+  syncStick();
+  addEventListener("resize", syncStick);
+  /* The display face swaps in after first paint and changes the header height,
+     so the measurement taken before that is stale by a couple of pixels. */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncStick);
+  addEventListener("keydown", trapFocus);
 
   setInterval(updateLiveBadges, 60000);
 
