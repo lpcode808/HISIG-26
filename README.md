@@ -5,6 +5,9 @@
 Made at the [TechZone](https://www.hawaiischoolforgirls.org/academics/techzone)
 at Hawaiʻi School for Girls at La Pietra.
 
+Picking this up cold? Start with [AGENT_HANDOFF.md](AGENT_HANDOFF.md) — repo
+provenance, conventions that matter, and what still needs human confirmation.
+
 Mobile-first static conference companion for HiSIG 2026 — *Navigating Global
 Digital Governance*, Friday September 4, 2026, Mililani, Hawaiʻi. No build
 step, no framework, no backend. Ported from the conference skeleton in
