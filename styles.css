@@ -428,7 +428,9 @@ summary.has-note .note-dot { display: block; }
   font-size: var(--t-small); line-height: 1.6;
   color: var(--ink-soft); margin: 0 0 .5rem; max-width: 62ch;
 }
-.privacy p:last-child { margin-bottom: 0; color: var(--ink); }
+/* Keyed to the class, not :last-child -- adding a paragraph should not
+   silently move the emphasis somewhere else. */
+.privacy .privacy-do { margin-bottom: 0; color: var(--ink); }
 .privacy strong { color: var(--ink); font-weight: 650; }
 /* "Export" here names the button above, so it is set like a label, not prose. */
 .privacy em {

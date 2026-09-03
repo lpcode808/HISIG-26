@@ -15,11 +15,12 @@ step, no framework, no backend. Ported from the conference skeleton in
 6,000-line HTML document.
 
     index.html    app shell (markup only)
-    styles.css    theme + layout; all color is custom properties at the top
+    styles.css    theme, type scale + layout; both live in custom properties at the top
     data.js       ALL content — the only file you edit per event
     app.js        behavior
     sw.js         offline cache
     smoke.mjs     headless end-to-end test
+    fonts/        the self-hosted display face, its license and its provenance
     manifest.webmanifest, favicon.svg
 
 ## What attendees get
@@ -29,6 +30,9 @@ step, no framework, no backend. Ported from the conference skeleton in
 - **Save (★)** sessions and speakers, then filter to just those.
 - **Notes** on any session or speaker, plus untethered quick notes. All notes
   live in `localStorage` on that person's own device — nothing is uploaded.
+  The Notes tab says so plainly, and the first note anyone saves — from
+  anywhere in the app — gets a toast telling them to export before they go,
+  because plenty of attendees will never open the Notes tab at all.
 - **Notes tab** — search across everything saved, jump back to the source
   session, delete individually.
 - **Export** — copy, iOS share sheet (`navigator.share`), or download a
@@ -74,12 +78,35 @@ badge.
 Theme: change `--accent`, `--ink`, `--bg` in `styles.css`. Dark mode derives
 from the same properties.
 
+## Typography
+
+Two families with separate jobs, both declared at the top of `styles.css`:
+
+- `--font-display` — **Vollkorn**, self-hosted from `fonts/`. Brand, headings,
+  session titles, speaker names, and the small-caps hour labels.
+- `--font-ui` — the device's own sans. Body copy and every control. Costs
+  nothing to load.
+
+Sizes come from the `--t-*` scale in `:root`; change them there rather than
+per-rule. Keep the display face off buttons, inputs and metadata — the
+contrast between the two families is the design, and it stops meaning anything
+if the serif is everywhere.
+
+**Before swapping the display face, read `fonts/README.md`.** The current one
+was chosen on Hawaiian orthography, not looks: Fraunces has no ʻokina glyph,
+and Literata's shaping merges the ʻokina into the next letter, so "Hawaiʻi"
+came out as "Hawaiï". Test any replacement against `Hawaiʻi`, `ʻĀina`,
+`Waimānalo` and `kuleana` on a real screen.
+
+The font is precached by `sw.js`, so **bump `CACHE_NAME` if you change it**,
+same as any other precached file.
+
 ## Test
 
     npm run serve            # in one shell
     npm test                 # in another
 
-40 checks covering search, filters, stars, note save/persist/delete,
+41 checks covering search, filters, stars, note save/persist/delete,
 cross-navigation, export contents, the destructive-action guard, mobile
 layout, touch-target sizes, console errors, UTC conversion, outbound links,
 and the live badge — including one run with the clock moved to 11:00 HST on
