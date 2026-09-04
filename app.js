@@ -360,6 +360,13 @@
     return kept;
   }
 
+  /* Writes into a live region, hiding it visually when the text is only there
+     to be spoken (the empty state already shows the same words on screen). */
+  function announce(node, text, srOnly) {
+    node.textContent = text;
+    node.classList.toggle("sr", Boolean(srOnly));
+  }
+
   function syncNoteMarkers() {
     $$("[data-note-marker]").forEach((node) => {
       const [type, id] = node.dataset.noteMarker.split("|");
@@ -404,17 +411,20 @@
     ]);
 
     if (s.type !== "break") {
+      /* The glyph carries the state, not just the colour: filled when saved,
+         outline when not. The two colours alone were identical in greyscale. */
       const star = el("button", {
         className: "star",
         type: "button",
-        textContent: "★"
+        textContent: isStarred("session", s.id) ? "\u2605" : "\u2606"
       });
       star.setAttribute("aria-label", `Save ${s.title}`);
       star.setAttribute("aria-pressed", String(isStarred("session", s.id)));
       star.classList.toggle("on", isStarred("session", s.id));
       star.addEventListener("click", () => {
         const on = toggleStar("session", s.id);
-        toast(on ? "Added to ★ Saved" : "Removed from ★ Saved");
+        toast(on ? "Added to \u2605 Saved" : "Removed from \u2605 Saved");
+        star.textContent = on ? "\u2605" : "\u2606";
         star.classList.toggle("on", on);
         star.setAttribute("aria-pressed", String(on));
         if (program.starredOnly) { flushEditors(); renderProgram(); }
@@ -498,9 +508,14 @@
     $("#empty").textContent = program.starredOnly && !stars.size
       ? "Nothing saved yet. Tap ★ on a session to keep it here."
       : "No sessions match that filter.";
-    $("#count").textContent = list.length
+    /* #count is the always-present live region; #empty is only un-hidden when
+       a filter empties the list, and a live region that does not exist in the
+       tree until the moment it matters announces nothing. So the count line
+       carries the message too, visually hidden, and the screen reader hears
+       "No sessions match that filter" instead of silence. */
+    announce($("#count"), list.length
       ? `${list.length} ${list.length === 1 ? "session" : "sessions"}`
-      : "";
+      : $("#empty").textContent, list.length === 0);
 
     const slots = new Map();
     for (const s of list) {
@@ -588,13 +603,17 @@
   function speakerCard(p) {
     const card = el("article", { className: "speaker", id: `speaker-${p.id}` });
 
-    const star = el("button", { className: "star", type: "button", textContent: "★" });
+    const star = el("button", {
+      className: "star", type: "button",
+      textContent: isStarred("speaker", p.id) ? "\u2605" : "\u2606"
+    });
     star.setAttribute("aria-label", `Save ${p.name}`);
     star.setAttribute("aria-pressed", String(isStarred("speaker", p.id)));
     star.classList.toggle("on", isStarred("speaker", p.id));
     star.addEventListener("click", () => {
       const on = toggleStar("speaker", p.id);
-      toast(on ? "Added to ★ Saved" : "Removed from ★ Saved");
+      toast(on ? "Added to \u2605 Saved" : "Removed from \u2605 Saved");
+      star.textContent = on ? "\u2605" : "\u2606";
       star.classList.toggle("on", on);
       star.setAttribute("aria-pressed", String(on));
       if (speakerState.starredOnly) { flushEditors(); renderSpeakers(); }
@@ -651,9 +670,9 @@
     $("#speakers-empty").textContent = speakerState.starredOnly && !stars.size
       ? "Nothing saved yet. Tap ★ on a speaker to keep them here."
       : "No speakers match that search.";
-    $("#speaker-count").textContent = list.length
+    announce($("#speaker-count"), list.length
       ? `${list.length} ${list.length === 1 ? "speaker" : "speakers"}`
-      : "";
+      : $("#speakers-empty").textContent, list.length === 0);
     const grid = el("div", { className: "speaker-grid" }, list.map(speakerCard));
     mount.append(grid);
     syncNoteMarkers();
@@ -705,6 +724,16 @@
     renderProgram();
     activateTab("program");
     reveal(`#session-${id}`);
+  }
+
+  /* The skip link scrolled correctly but left focus on <body>, so the next Tab
+     went back to the top of the page -- the link moved the view and not the
+     keyboard. #main carries tabindex="-1" so it can receive it. */
+  function wireSkipLink() {
+    $(".skip").addEventListener("click", () => {
+      const main = $("#main");
+      requestAnimationFrame(() => main.focus({ preventScroll: true }));
+    });
   }
 
   function reveal(selector) {
@@ -829,9 +858,9 @@
       : savedBits.length
         ? "You have not typed any notes yet — your saved ★ items are listed above."
         : "No notes yet. Save one from any session or speaker.";
-    $("#notes-count").textContent = list.length
+    announce($("#notes-count"), list.length
       ? `${list.length} of ${all.length} ${all.length === 1 ? "note" : "notes"}`
-      : "";
+      : $("#notes-empty").textContent, list.length === 0);
 
     list.forEach((n) => mount.append(noteCard(n)));
 
@@ -979,7 +1008,19 @@
   function wireModals() {
     $("#export-btn").addEventListener("click", () => {
       $("#export-text").value = exportMarkdown();
-      $("#export-share").hidden = !navigator.share;
+      const canShare = Boolean(navigator.share);
+      $("#export-share").hidden = !canShare;
+      /* The hint led with Share, which is the best of the three routes -- but
+         the button is hidden wherever navigator.share is missing, so on those
+         phones the instructions named a button that was not on screen. */
+      $("#export-hint").innerHTML = canShare
+        ? "<strong>This is the only copy.</strong> Put it somewhere you will " +
+          "still have next week. Tap <strong>Share</strong> to send it to your " +
+          "notes app, Google Drive or email; or <strong>Copy</strong> it and " +
+          "paste it somewhere; or <strong>Save as a file</strong>."
+        : "<strong>This is the only copy.</strong> Put it somewhere you will " +
+          "still have next week. Tap <strong>Copy</strong> and paste it into " +
+          "your notes app or an email, or <strong>Save as a file</strong>.";
       openModal("export-modal");
     });
     $("#export-close").addEventListener("click", () => closeModal("export-modal"));
@@ -1187,6 +1228,7 @@
   wireProgramControls();
   wireSpeakerControls();
   wireNotesControls();
+  wireSkipLink();
   wireModals();
   syncNoteCount();
   renderProgram();

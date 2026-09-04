@@ -33,7 +33,11 @@
   --accent:     #1f4fd8;
   --accent-ink: #ffffff;
   --star:       #e8a317;
+  /* --star is the fill/accent tone; --star-ink is the same hue pushed dark
+     enough to clear 4.5:1 on white, for the glyph itself. */
+  --star-ink:   #8a5c00;
   --danger:     #c0392b;
+  --danger-ink: #ffffff;   /* text on a --danger fill; flips in dark mode */
   --radius:     10px;
   --wrap:       1060px;
   --tap:        44px;   /* minimum touch target */
@@ -64,7 +68,11 @@
     --accent:     #7ea2ff;
     --accent-ink: #10141a;
     --star:       #f0b429;
+    --star-ink:   #f0b429;
     --danger:     #ff7a6b;
+    /* White on this salmon is 2.55:1 -- and it was the confirm button on the
+       one irreversible action in the app. Dark ink on it is 8.9:1. */
+    --danger-ink: #2a0d09;
   }
 }
 
@@ -181,14 +189,19 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 
 /* This panel lives inside the sticky header, so an open one is subtracted from
    every screen of programme until it is closed by hand -- left open at 390x844
-   it took the header to 696px and left 148px of content. Cap it and let it
-   scroll inside itself; the sticky header can never eat more than half. */
+   it took the header to 696px and left 148px of content, and at a 32px system
+   font on a 360px phone the header grew taller than the whole viewport, so
+   scrolling produced no visible change and the app read as frozen.
+   Capping the panel alone was not enough, because the brand, tab row and
+   summary above it also grow with the text size. The cap belongs on the whole
+   header, which is the thing that is actually stealing the screen. */
 .venue-panel {
   display: grid; gap: 1.25rem; padding-top: .75rem;
   border-top: 1px solid var(--line);
-  max-height: 45vh; overflow-y: auto;
-  overscroll-behavior: contain;
 }
+.site { overflow-y: auto; overscroll-behavior: contain; }
+/* Only bites when the panel is open; closed, the header is nowhere near this. */
+.site:has(.venue-toggle[open]) { max-height: 60vh; }
 .venue-share { display: grid; justify-items: start; gap: .4rem; }
 .qr-wrap {
   width: 132px; padding: .5rem; background: #fff; border-radius: 8px;
@@ -285,7 +298,7 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn.small { min-height: var(--tap); padding: .3rem .8rem; font-size: var(--t-small); }
 .btn.ghost { background: var(--bg); color: var(--ink); border-color: var(--line); }
-.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: var(--danger-ink); }
 .btn.ghost.danger { background: var(--bg); color: var(--danger); border-color: var(--line); }
 
 /* These are the main route from "who is that?" to the bio, and they were 20px
@@ -306,13 +319,17 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 
 /* Was var(--line) -- 1.28:1 on white, a smudge. Saving is half the app; the
    control has to be visible before it is tapped. */
+/* Saved and unsaved were #e8a317 and #aab0b7 -- 1.01:1 apart, pixel-identical
+   in greyscale, so in bright sun or to a colour-deficient eye the star did not
+   report its own state at all. The glyph now carries it (app.js swaps ☆ for ★),
+   colour only reinforces it, and neither state relies on opacity. */
 .star {
   min-width: var(--tap); min-height: var(--tap); flex: none; cursor: pointer;
   background: none; border: 0; font-size: 1.3rem; line-height: 1;
-  color: var(--ink-soft); opacity: .5;
+  color: var(--ink-soft);
 }
-.star:hover { color: var(--star); opacity: 1; }
-.star.on { color: var(--star); opacity: 1; }
+.star:hover { color: var(--star-ink); }
+.star.on { color: var(--star-ink); }
 
 /* ── schedule ────────────────────────────────────────────────────────── */
 
@@ -356,7 +373,9 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 }
 .when .start { display: block; font-weight: 650; color: var(--ink); letter-spacing: -0.01em; }
 .when .end { display: block; }
-.when .utc { display: block; margin-top: .2rem; font-size: var(--t-micro); opacity: .85; }
+/* The .85 opacity stacked on --ink-soft at 11px took this to 2.84:1 -- and it
+   sits directly under the session time, so it reads as part of it. */
+.when .utc { display: block; margin-top: .2rem; font-size: var(--t-micro); }
 
 .status-badge {
   display: inline-block; margin-top: .3rem; padding: .1rem .45rem;
@@ -364,7 +383,9 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
   text-transform: uppercase; letter-spacing: .09em; line-height: 1.6;
 }
 .status-badge.is-now { background: var(--accent); color: var(--accent-ink); }
-.status-badge.is-next { background: var(--bg-alt); color: var(--ink-soft); border: 1px solid var(--line); }
+/* "Up Next" is now shown all day beside "Now", and it is the label a newcomer
+   uses to work out where to be -- it was 3.46:1 at 11px bold. */
+.status-badge.is-next { background: var(--bg-alt); color: var(--ink); border: 1px solid var(--line); }
 
 .s-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
 /* Session titles carry the page. They were 1.02rem next to 1rem body copy,
@@ -430,6 +451,11 @@ summary.has-note .note-dot { display: block; }
 .links .ext { color: var(--accent); }
 
 .sponsor { font-size: var(--t-fine); color: var(--ink-soft); margin: .45rem 0 0; font-style: italic; }
+
+/* The UA's default placeholder grey is ~#757575, which lands at 4.33:1 on the
+   off-white modal background and 3.71:1 in dark. One rule covers the search
+   boxes, the quick-note composer and the "delete all" confirm field. */
+::placeholder { color: var(--ink-soft); opacity: 1; }
 .sponsors { margin: .5rem 0 .75rem; padding-left: 1.1rem; color: var(--ink-soft); font-size: var(--t-small); }
 .sponsors li { margin-bottom: .15rem; }
 .summary { color: var(--ink); }
@@ -641,7 +667,15 @@ summary.has-note .note-dot { display: block; }
      320px, so the pill dropped to a second line and the sticky header grew
      19px permanently. */
   .tabs { gap: .1rem; }
-  .tab { padding-inline: .15rem; white-space: nowrap; letter-spacing: .06em; }
+  /* nowrap + flex:1 meant the row could neither wrap nor shrink, so at the
+     phone's larger text sizes it overflowed the document instead: at a 24px
+     default font the Notes tab was clipped, at 32px it was 193px off-screen
+     entirely -- and the count pill pushed it over the edge, so someone only
+     lost the tab once they had notes worth losing.
+     The row wraps; each tab keeps nowrap so its own label and count pill stay
+     on one line together, which is what the 320px fix above was protecting. */
+  .tabs { flex-wrap: wrap; }
+  .tab { flex: 1 1 auto; padding-inline: .15rem; white-space: nowrap; letter-spacing: .06em; }
   .pill { margin-left: .2rem; }
 
   .session { grid-template-columns: 1fr; gap: .3rem; }

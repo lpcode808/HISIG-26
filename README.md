@@ -28,7 +28,10 @@ step, no framework, no backend. Ported from the conference skeleton in
 
 - **Program** — day tabs, live search, track filter, sessions grouped by start
   time. Tap a speaker name to jump to their profile.
-- **Save (★)** sessions and speakers, then filter to just those.
+- **Save (★)** sessions and speakers, then filter to just those. The glyph
+  carries the state — outline ☆ unsaved, filled ★ saved — so it still reads in
+  bright sun and to a colour-deficient eye, where the two colours alone were
+  1.01:1 apart and identical in greyscale.
 - **Notes** on any session or speaker, plus untethered quick notes. All notes
   live in `localStorage` on that person's own device — nothing is uploaded.
   The Notes tab says so plainly, and the first note anyone saves — from
@@ -110,18 +113,31 @@ same as any other precached file.
     npm run serve            # in one shell
     npm test                 # in another
 
-48 checks covering search, filters, stars, note save/persist/delete,
+54 checks covering search, filters, stars, note save/persist/delete,
 cross-navigation, export contents, the destructive-action guard, mobile
 layout, touch-target sizes, console errors, UTC conversion, outbound links,
 and the live badge — including one run with the clock moved to 11:00 HST on
 event day to confirm NOW lands on the right session.
 
-The last seven are regression guards for bugs that were live and invisible on
-a casual click-through: a pasted URL overflowing the page, a modal losing your
-scroll position or failing to lock the page behind it, `--stick` drifting from
-the real header height, and — at 320px — the note-count pill growing the
-header, the search placeholder being clipped, and horizontal overflow. Each
-was confirmed to fail with its fix reverted, so they are not decoration.
+Thirteen of them are regression guards for bugs that were live and invisible
+on a casual click-through. Each was confirmed to fail with its fix reverted,
+so they are not decoration.
+
+Six guard ways the app used to **lose an attendee's notes without saying so** —
+a second quick note overwriting the first, a composer that kept the old text
+so overwriting felt like adding, stars that could not be exported at all, an
+unsaved draft destroyed by tapping a filter, and a cleared note with no undo.
+
+Seven guard layout and state bugs: a pasted URL overflowing the page, a modal
+losing your scroll position or failing to lock the page behind it, `--stick`
+drifting from the real header height, and — at 320px — the note-count pill
+growing the header, the search placeholder being clipped, and horizontal
+overflow.
+
+One note on the suite itself: the "no live badges outside the event day"
+check pins its own clock. It used to run on the wall clock, which meant it
+only tested anything on a non-event day and went red the moment HST ticked
+over into September 4 — exactly when someone would be running it.
 
 ## Deploy
 

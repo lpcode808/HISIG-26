@@ -71,13 +71,13 @@
   </details>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1">
 
   <!-- ── PROGRAM ────────────────────────────────────────────────────────── -->
   <section class="panel" id="panel-program" role="tabpanel" aria-labelledby="tab-program">
     <div class="wrap">
 
-      <p class="masthead" data-bind="event.tagline"></p>
+      <h1 class="masthead" data-bind="event.tagline"></h1>
 
       <div class="controls">
         <div class="days" role="tablist" aria-label="Program days"></div>
@@ -96,7 +96,7 @@
 
       <p class="count" id="count" aria-live="polite"></p>
       <div id="schedule"></div>
-      <p class="empty" id="empty" hidden>No sessions match that filter.</p>
+      <p class="empty" id="empty" aria-live="polite" hidden>No sessions match that filter.</p>
     </div>
   </section>
 
@@ -112,7 +112,7 @@
       </div>
       <p class="count" id="speaker-count" aria-live="polite"></p>
       <div id="speakers-list"></div>
-      <p class="empty" id="speakers-empty" hidden>No speakers match that search.</p>
+      <p class="empty" id="speakers-empty" aria-live="polite" hidden>No speakers match that search.</p>
     </div>
   </section>
 
@@ -122,8 +122,8 @@
       <div class="notes-head">
         <h2>Your notes</h2>
         <div class="notes-actions">
-          <button class="btn ghost" id="export-btn" type="button" aria-haspopup="dialog">Export ↓</button>
-          <button class="btn ghost danger" id="clear-btn" type="button" aria-haspopup="dialog">Clear all</button>
+          <button class="btn ghost" id="export-btn" type="button" aria-haspopup="dialog">Save a copy</button>
+          <button class="btn ghost danger" id="clear-btn" type="button" aria-haspopup="dialog">Delete all</button>
         </div>
       </div>
       <aside class="privacy">
@@ -136,8 +136,8 @@
         </p>
         <p class="privacy-do">
           <strong>So take them with you before you head home.</strong>
-          <em>Export</em> copies everything out as plain text — to your Notes
-          app, your clipboard, or a file you keep.
+          <em>Save a copy</em> puts everything into plain text you can keep —
+          in your notes app, your email, or a file.
         </p>
       </aside>
 
@@ -159,7 +159,7 @@
 
       <p class="count" id="notes-count" aria-live="polite"></p>
       <div id="notes-list"></div>
-      <p class="empty" id="notes-empty" hidden>No notes yet. Save one from any session or speaker.</p>
+      <p class="empty" id="notes-empty" aria-live="polite" hidden>No notes yet. Save one from any session or speaker.</p>
     </div>
   </section>
 
@@ -169,7 +169,7 @@
 <div class="overlay" id="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title" hidden>
   <div class="modal">
     <div class="modal-head">
-      <h2 id="export-title">Export your notes</h2>
+      <h2 id="export-title">Save a copy of your notes</h2>
       <button class="icon-btn" id="export-close" type="button" aria-label="Close">✕</button>
     </div>
     <p class="muted small" id="export-hint">
@@ -183,7 +183,7 @@
     <div class="modal-actions">
       <button class="btn" id="export-copy" type="button">Copy</button>
       <button class="btn ghost" id="export-share" type="button" hidden>Share</button>
-      <button class="btn ghost" id="export-download" type="button">Download .md</button>
+      <button class="btn ghost" id="export-download" type="button">Save as a file</button>
     </div>
   </div>
 </div>

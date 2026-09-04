@@ -2,6 +2,161 @@
 
 Newest entry first. Append a dated section when you finish a body of work.
 
+## 2026-09-04 Three-Persona Audit, The Night Before
+
+Three subagents drove the running app in Chromium, each as a different
+attendee, and reported without touching the tree; every fix below was made
+here and re-measured. The personas were chosen to pull in different
+directions, and that is what made them worth running:
+
+1. **A 16-year-old at her first policy conference**, 360×800 Android, there
+   for a class assignment — comprehension, and getting her notes out.
+2. **A delegate arriving mid-morning**, 390×844 and landscape, clock faked to
+   10:40 AM and 4:15 PM HST — orientation on the day.
+3. **A community attendee in their 60s**, 200% text, bright sun, unreliable
+   cell service — contrast, large text, offline.
+
+**Two of the three independently hit the same quick-note data loss.** That
+convergence is the strongest signal in the set; when personas overlap, believe
+it.
+
+### The four ways this app was destroying notes
+
+All silent. Nothing on screen said the note was gone, which is why nobody had
+caught them by clicking around.
+
+1. **Every quick note wrote to one shared `quick:general` key.** The second
+   thought of the day replaced the first. Worse: the note count stayed at 1, so
+   the save re-fired the *first-note* toast — "Saved on this phone only" —
+   reassuring the attendee at the exact moment their earlier note was
+   destroyed. The composer now adds a new note each time and clears itself.
+   Notes already under the old key still render and stay editable.
+2. **Stars alone could not be exported.** Export was greyed out with the red
+   Delete all as the only enabled control, and `exportMarkdown()` returned
+   before it ever reached the starred list. Someone told to "pick three
+   sessions" who stars three and types nothing could not get them off the
+   phone. Saved speakers are carried now too.
+3. **Any re-render ate an unsaved draft.** Tapping ★ Saved or typing in search
+   rebuilt every card. `flushEditors()` persists dirty drafts first. It only
+   ever *writes* — an emptied box is cleared by Save, never by a re-render —
+   which is also why clear-all cannot resurrect anything.
+4. **Emptying a note box and pressing Save deleted it with no undo**, though
+   the Delete button has had one since the last pass.
+
+### Orientation on the day
+
+- **"Up Next" was an `else if`.** For every minute a session was actually
+  running, the app answered "what is on now?" and stayed silent on "what is on
+  next?". Both are badged now — which promptly exposed that `.status-badge
+  .is-next` was 3.46:1. Fixed to `--ink`.
+- **At 10:40 AM the live session sat ~1,350px down**, behind two that had
+  finished hours earlier. `jumpToLive()` lands first paint on it. First paint
+  only, so it never fights the per-tab scroll memory.
+- **The reception's "different venue" warning was inside the collapsed
+  disclosure.** A skimmer got an address and no hint it was somewhere else.
+  `summary` now renders on the face of the card (see `.card-summary`), and
+  `room` is a maps link.
+- **The UTC line had no date** though Hawaiʻi is UTC−10 and every afternoon
+  session falls on the next UTC day.
+
+### Accessibility — the three that actually blocked someone
+
+- **The tab row overflowed the document at large system text.** At a 24px
+  default font the Notes tab was clipped; at 32px it was 193px off-screen
+  entirely, and the row read `PROGRAM SPEAKERS` with no hint a third tab
+  existed. Notes, export and the privacy explanation all unreachable. The row
+  wraps now; each tab keeps `nowrap` so its label and count pill stay together,
+  which is what the earlier 320px fix was protecting. **Verified: document
+  scrollWidth equals the viewport at 390 and 360 wide, at 16/24/32px.**
+- **Saved and unsaved ★ were 1.01:1 apart and pixel-identical in greyscale.**
+  Colour was the only difference. The glyph now carries the state (☆ / ★) and
+  `--star-ink` clears 4.5:1 on white. Measured 5.81:1.
+- **`cache.addAll` is all-or-nothing.** One dropped request out of fourteen —
+  an icon, on exactly the flaky first load a QR scan produces at a venue with
+  poor signal — rejected the whole install. The worker never activated, the
+  cache stayed empty, the app rendered perfectly, and the silent `.catch` on
+  registration meant nothing said so. The attendee found out by walking
+  outside. Core five strict, extras `allSettled`. **Verified: with icon-512
+  failing, 1 registration and 13 cached entries; it was 0 and 0.**
+
+### Contrast, measured not eyeballed
+
+Fixed: `.utc` 2.84 → 6.39 (it stacked `opacity:.85` on `--ink-soft` at 11px);
+`.status-badge.is-next` 3.46 → 16.7; `::placeholder` now `--ink-soft`, one rule
+covering all four failing placeholders; and in dark mode the **`Delete all
+notes` confirm button was white on salmon at 2.55:1** — the final confirm on
+the one irreversible action in the app — now `--danger-ink` at 7.11:1.
+
+`.muted` on light was checked and is **fine at 6.39:1**. Every failure was a
+case of an extra `opacity`, a lighter `--bg-alt` backdrop, or a hardcoded UA
+grey layered on top — not the token itself.
+
+### Also
+
+Header capped at 60vh when the venue panel is open. The panel is inside the
+sticky header and never closed itself; open on a 360×800 phone at 32px text it
+made the header **taller than the viewport**, so scrolling changed nothing and
+the app read as frozen. Capping the panel alone was not enough — the brand, tab
+row and summary above it grow with the text size too, so the cap belongs on
+`.site`. It also closes on tab change now. `syncStick()` tracks the capped
+height correctly (verified 506/506 and 480/480).
+
+Plus: the Venue & share link to the official program was the one outbound link
+with no `target`/`rel`, so it navigated the app away and lost every open panel;
+the toast sat above the modal and in landscape ate the tap on the download
+button (`pointer-events: none`, re-enabled on `.toast-action`); the quick-note
+and speaker note boxes are built while their panel is `hidden`, where
+`scrollHeight` is 0, so autogrow pinned them to a 20px sliver (`min-height` is
+the floor); the Notes tab told someone holding three starred sessions "No
+notes yet"; the destructive action had three different names; `Export ↓` and
+`Download .md` became `Save a copy` and `Save as a file`; the export hint named
+a Share button that is hidden wherever `navigator.share` is missing; empty
+states are announced through the always-present count live region rather than
+a region that does not exist until it matters; the page had no `<h1>`; the skip
+link moved the view but not focus; speaker chips named a session but never its
+time; and the export timestamp used the device's timezone, not the event's.
+
+### The test suite had a time bomb
+
+`"no live badges outside the event day"` ran against the wall clock. That meant
+it only tested anything on a non-event day — and went red the moment HST ticked
+over into September 4, which is exactly when someone would run it. It pins its
+own clock now. **This was not caused by any code change; it fired mid-session
+at HST midnight and is worth remembering as a class of bug: a test whose
+meaning depends on the date it runs.**
+
+### Verification
+
+- Smoke test **54/54** (was 48). Six new guards, all confirmed to fail with
+  their fix reverted — proven, not assumed.
+- Measured after fixing: tab row fits at 390/360 × 16/24/32px; header 60% of
+  viewport with the panel open at both sizes; star 5.81:1 and glyph-distinct;
+  `.utc` 6.39:1; dark danger confirm 7.11:1; Up Next 16.7/14.6; service worker
+  survives a failed asset; Now and Up Next both badge at 10:40 HST.
+- `CACHE_NAME` at **v6**.
+- **Not** verified: anything on a real phone. Everything above is Chromium.
+
+### Left for a human — content, not code
+
+These are decisions, and inventing them would be worse than leaving them:
+
+- **Plain-language `summary` lines for the seven teaching sessions.** The field
+  exists and now renders on the face of the card; only the reception has one.
+  This was the single highest-value change for a first-timer, and the sentences
+  have to come from the organisers. Do not write them from the abstracts.
+- **No speaker has a `bio`**, so tapping a name crosses to a card offering
+  nothing the programme did not already show.
+- **`data.js:86`** — the keynote abstract reads "the Internet in Hawaii", no
+  ʻokina. It is transcribed verbatim from the official programme, so this is a
+  question for the organiser, not a silent edit. Every other instance in
+  `data.js` is correctly "Hawaiʻi". The reception `room` keeps the venue's
+  postal spelling "Wahiawa" while the plain-language line says "Wahiawā".
+- **`event.kicker`** ("Hawaiʻi School on Internet Governance") still renders
+  nowhere; the header says only "HiSIG 2026".
+- **Android back button** exits the app rather than stepping back through tabs.
+  Deliberately not fixed the night before — it needs `pushState` plus real
+  device testing, and getting it wrong strands people mid-conference.
+
 ## 2026-09-03 Typography, Mobile UX Pass, Privacy Disclaimer
 
 Three things, in this order: a display face and a real type scale; a plain
