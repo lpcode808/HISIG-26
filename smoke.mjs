@@ -59,9 +59,21 @@ const unsafe = await page.locator("a.ext").evaluateAll(
 check("outbound links carry target=_blank + noopener", unsafe === 0, `${unsafe} unsafe`);
 
 /* Off-event, nothing should be badged -- otherwise "Up Next" sits on the first
-   session for months before the conference. */
-check("no live badges outside the event day",
-  (await page.locator(".status-badge").count()) === 0);
+   session for months before the conference.
+
+   This needs its own pinned clock. It used to run against the shared page on
+   whatever the wall clock said, which quietly meant the check only tested
+   anything on a non-event day -- and went red the moment HST ticked over into
+   September 4, i.e. exactly when someone would be running the suite. */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const off = await ctx.newPage();
+  await off.clock.setFixedTime(new Date("2026-08-01T12:00:00Z"));
+  await off.goto(BASE, { waitUntil: "networkidle" });
+  check("no live badges outside the event day",
+    (await off.locator(".status-badge").count()) === 0);
+  await ctx.close();
+}
 
 /* -- stars --------------------------------------------------------------- */
 const firstStar = page.locator(".session:not(.break) .star").first();
@@ -242,6 +254,90 @@ check("no console errors", errors.length === 0, errors.join(" | "));
   }));
   check("--stick matches the real header height",
     Math.abs(stick.real - stick.varr) <= 1, `header=${stick.real} --stick=${stick.varr}`);
+
+  await ctx.close();
+}
+
+/* -- note-loss regressions -------------------------------------------------
+   Four ways this app used to destroy an attendee's notes without telling them.
+   Each was found by driving the app as a real attendee, and each is silent --
+   nothing on screen says the note is gone, so only a test catches a relapse. */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const n = await ctx.newPage();
+  await n.goto(BASE, { waitUntil: "networkidle" });
+
+  /* 1. Every quick note used to be written to one shared "quick:general" key,
+        so the second thought of the day silently replaced the first. */
+  await n.click("#tab-notes");
+  await n.fill("#quick-note", "First: ask about IPv6 in HI");
+  await n.click("#save-quick");
+  await n.waitForTimeout(200);
+  await n.fill("#quick-note", "Second: coffee with the ICANN folks");
+  await n.click("#save-quick");
+  await n.waitForTimeout(200);
+  const bothQuick = await n.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("hisig26_notes") || "{}");
+    const t = Object.values(raw).map((x) => x.text);
+    return { n: t.length, first: t.some((x) => x.includes("IPv6")), second: t.some((x) => x.includes("coffee")) };
+  });
+  check("a second quick note does not overwrite the first",
+    bothQuick.n === 2 && bothQuick.first && bothQuick.second, JSON.stringify(bothQuick));
+
+  /* The composer adds, it does not edit, so it must not keep the saved text
+     sitting there looking like a note you are about to amend. */
+  check("the quick-note composer clears after saving",
+    (await n.inputValue("#quick-note")) === "");
+
+  /* 2. Stars alone used to leave Export greyed out -- with the red Clear all as
+        the only enabled control -- and exportMarkdown() returned before it ever
+        reached the starred list. Someone told to "pick three sessions" and star
+        them could not get them off the phone at all. */
+  await n.evaluate(() => localStorage.setItem("hisig26_notes", "{}"));
+  await n.reload({ waitUntil: "networkidle" });
+  await n.locator(".session .star").first().click();
+  await n.click("#tab-speakers");
+  await n.locator(".speaker .star").first().click();
+  await n.click("#tab-notes");
+  await n.waitForTimeout(200);
+  check("Export is available with stars but no typed notes",
+    !(await n.locator("#export-btn").isDisabled()));
+  await n.click("#export-btn");
+  await n.waitForTimeout(250);
+  const starOnly = await n.inputValue("#export-text");
+  check("a stars-only export actually lists them",
+    starOnly.includes("## Saved sessions") && starOnly.includes("## Saved speakers"),
+    starOnly.slice(0, 80).replace(/\n/g, " "));
+  await n.keyboard.press("Escape");
+  await n.waitForTimeout(150);
+
+  /* 3. Re-rendering the programme rebuilt every card and took any half-typed
+        note with it, so tapping the ★ Saved chip mid-sentence erased it. */
+  await n.click("#tab-program");
+  await n.locator(".session .expand summary").first().click();
+  await n.locator(".session .note-editor textarea").first().fill("DRAFT not yet saved");
+  await n.click("#starred-only");
+  await n.waitForTimeout(300);
+  const draftKept = await n.evaluate(() =>
+    Object.values(JSON.parse(localStorage.getItem("hisig26_notes") || "{}"))
+      .some((x) => x.text.includes("DRAFT not yet saved")));
+  check("an unsaved draft survives a filter re-render", draftKept);
+  await n.click("#starred-only");
+  await n.waitForTimeout(200);
+
+  /* 4. Emptying a note box and pressing Save deleted it as permanently as the
+        Delete button, which has had an Undo since the last pass. */
+  await n.click("#tab-notes");
+  await n.waitForTimeout(200);
+  await n.locator(".note-card .expand summary, .note-card").first().click().catch(() => {});
+  await n.click("#tab-program");
+  const box = n.locator(".session .note-editor textarea").first();
+  await n.locator(".session .expand summary").first().click().catch(() => {});
+  await box.fill("");
+  await n.locator(".session .note-editor .btn").first().click();
+  await n.waitForTimeout(250);
+  check("clearing a note offers an Undo",
+    (await n.locator("#toast .toast-action").count()) === 1);
 
   await ctx.close();
 }

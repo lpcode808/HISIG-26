@@ -179,9 +179,15 @@ input, textarea, select, button { font: inherit; font-size: 16px; color: inherit
 .venue-toggle .chevron { width: 1em; height: 1em; flex: none; margin-left: auto; transition: transform .15s; }
 .venue-toggle[open] .chevron { transform: rotate(180deg); }
 
+/* This panel lives inside the sticky header, so an open one is subtracted from
+   every screen of programme until it is closed by hand -- left open at 390x844
+   it took the header to 696px and left 148px of content. Cap it and let it
+   scroll inside itself; the sticky header can never eat more than half. */
 .venue-panel {
   display: grid; gap: 1.25rem; padding-top: .75rem;
   border-top: 1px solid var(--line);
+  max-height: 45vh; overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .venue-share { display: grid; justify-items: start; gap: .4rem; }
 .qr-wrap {
@@ -428,7 +434,39 @@ summary.has-note .note-dot { display: block; }
 .sponsors li { margin-bottom: .15rem; }
 .summary { color: var(--ink); }
 
+/* The plain-language line now sits on the face of the card rather than inside
+   the disclosure. For the Pau Hana Reception it is the only place that says
+   "different venue, 15 minute drive", so it has to out-shout an 11px address
+   chip and an italic sponsor credit -- it is logistics, not commentary. */
+.card-summary {
+  margin: .55rem 0 0; padding: .5rem .7rem;
+  font-size: var(--t-small); font-weight: 600; color: var(--ink);
+  background: color-mix(in srgb, var(--star) 14%, var(--bg));
+  border-left: 3px solid var(--star); border-radius: 0 6px 6px 0;
+}
+
+/* A tappable address on the one card that requires arranging a ride. Keeps the
+   metadata-chip look but takes a real target height and the accent colour. */
+.room-link {
+  text-transform: none; letter-spacing: normal; font-size: var(--t-fine);
+  display: inline-flex; align-items: center; min-height: 32px;
+  color: var(--accent); border-color: var(--accent);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+.saved-summary {
+  margin: .75rem 0 0; padding: .55rem .75rem;
+  font-size: var(--t-small); color: var(--ink);
+  background: var(--bg-alt); border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
 .note-editor { margin-top: .6rem; }
+/* min-height is a floor under app.js's autogrow. Both the quick-note composer
+   and the speaker note boxes are built while their panel is still `hidden`,
+   where scrollHeight measures 0 -- so autogrow wrote `height: 0px` inline and
+   they rendered as a 20px sliver with the placeholder sheared in half. */
+.note-editor textarea, .composer textarea { min-height: 5.5rem; }
 .note-editor textarea {
   width: 100%; padding: .55rem .7rem; resize: none; max-height: 50vh; overflow-y: auto;
   background: var(--bg-alt); color: var(--ink);
@@ -575,9 +613,15 @@ summary.has-note .note-dot { display: block; }
   font-size: var(--t-small); font-weight: 600; line-height: 1.45;
   text-align: center;
   opacity: 0; transition: opacity .2s ease, transform .2s ease;
+  /* The toast sits above the modal (z-index 60 vs 50), and in landscape it
+     lands squarely on the export dialog's button row -- so the message telling
+     you to export was itself eating the tap on "Download .md". It carries no
+     interaction of its own except the undo button, which opts back in below. */
+  pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast-action {
+  pointer-events: auto;
   margin-left: .75rem; padding: .15rem .5rem; cursor: pointer;
   background: none; border: 1px solid currentColor; border-radius: 6px;
   color: inherit; font-size: var(--t-small); font-weight: 700;
@@ -606,6 +650,13 @@ summary.has-note .note-dot { display: block; }
   .status-badge { margin-top: 0; }
   .day { flex: 1 1 45%; min-width: 0; }
   .brand-sub { flex-basis: 100%; }
+}
+
+/* Sideways, the sticky header took 148px of a 390px viewport and left 41px of
+   programme above the fold. Both of these repeat information that is one tap
+   away in Venue & share; give the room back to the schedule. */
+@media (orientation: landscape) and (max-height: 460px) {
+  .brand-sub, .masthead { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

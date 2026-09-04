@@ -58,7 +58,8 @@
         <ul class="sponsors" id="event-sponsors"></ul>
         <p><a id="register-link" class="btn" hidden>Register</a></p>
         <p class="muted small">Official program:
-          <a data-bind-href="event.officialUrl" data-bind="event.officialUrl"></a>
+          <a class="ext" data-bind-href="event.officialUrl" data-bind="event.officialUrl"
+             target="_blank" rel="noopener noreferrer"></a>
         </p>
       </div>
       <div class="venue-share">
@@ -140,6 +141,8 @@
         </p>
       </aside>
 
+      <p class="saved-summary" id="saved-summary" hidden></p>
+
       <div class="composer">
         <label class="sr" for="quick-note">Quick note</label>
         <textarea id="quick-note" rows="3" placeholder="Jot anything not tied to a session…"></textarea>
@@ -171,8 +174,9 @@
     </div>
     <p class="muted small" id="export-hint">
       <strong>This is the only copy.</strong> Put it somewhere you will still have
-      next week — on iPhone tap <strong>Share</strong> to drop it into Notes;
-      otherwise copy it or download a Markdown file.
+      next week. Tap <strong>Share</strong> to send it to your notes app, Google
+      Drive or email; or <strong>Copy</strong> it and paste it somewhere; or
+      <strong>Download</strong> it as a file.
     </p>
     <label class="sr" for="export-text">Your notes, formatted for export</label>
     <textarea id="export-text" readonly rows="12"></textarea>

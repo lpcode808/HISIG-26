@@ -255,6 +255,10 @@
 
   function activateTab(name) {
     if (name !== currentTab) tabScroll[currentTab] = window.scrollY;
+    /* The venue panel is inside the sticky header and never closed itself, so
+       it followed you onto every tab, taking a chunk of each screen with it. */
+    const venue = $("#venue-toggle");
+    if (name !== currentTab && venue.open) { venue.open = false; syncStick(); }
     TABS.forEach((t) => {
       const on = t === name;
       $(`#tab-${t}`).setAttribute("aria-selected", String(on));
@@ -300,6 +304,7 @@
       value: existing ? existing.text : ""
     });
     ta.setAttribute("aria-label", "Your notes for this item");
+    ta.dataset.noteFor = `${type}|${id}`;
     autogrow(ta);
 
     const meta = el("span", { className: "muted small" },
@@ -307,16 +312,52 @@
     const save = el("button", { className: "btn small", type: "button", textContent: "Save" });
 
     save.addEventListener("click", () => {
+      const before = getNote(type, id);
       const ok = saveNote(type, id, ta.value);
       if (!ok) return toast("Could not save — browser storage is blocked.");
       const now = getNote(type, id);
       meta.textContent = now ? `Saved ${relative(now.updatedAt)}` : "Cleared";
-      if (now) toastNoteSaved(); else toast("Note cleared");
+      if (now) {
+        toastNoteSaved();
+      } else {
+        /* Emptying the box and pressing Save deletes the note just as surely as
+           the Delete button does, and that button has had an Undo since the
+           last pass. Same cost, same safety net. */
+        toast("Note cleared", before ? { label: "Undo", run: () => {
+          notes[before.key] = before;
+          store.write(K.notes, notes);
+          syncNoteCount();
+          ta.value = before.text;
+          meta.textContent = `Saved ${relative(before.updatedAt)}`;
+          syncNoteMarkers();
+          if (currentTab === "notes") renderNotes();
+        } } : undefined);
+      }
       syncNoteMarkers();
+      if (currentTab === "notes") renderNotes();
     });
 
     box.append(ta, el("div", { className: "note-row" }, [meta, save]));
     return box;
+  }
+
+  /* Re-rendering a list rebuilds every card and takes any half-typed textarea
+     with it, so tapping ★ Saved or typing in the search box used to destroy a
+     note in progress with no warning. Persist dirty drafts before that happens.
+     This only ever writes: an emptied box is cleared by pressing Save, never by
+     a re-render, which is also why clear-all cannot resurrect anything here. */
+  function flushEditors() {
+    let kept = 0;
+    $$("textarea[data-note-for]").forEach((ta) => {
+      const [type, id] = ta.dataset.noteFor.split("|");
+      const text = ta.value.trim();
+      if (!text) return;
+      const stored = getNote(type, id);
+      if (stored && stored.text === text) return;
+      if (saveNote(type, id, text)) kept++;
+    });
+    if (kept) toast(kept === 1 ? "Your unsaved note was kept" : `${kept} unsaved notes kept`);
+    return kept;
   }
 
   function syncNoteMarkers() {
@@ -373,10 +414,10 @@
       star.classList.toggle("on", isStarred("session", s.id));
       star.addEventListener("click", () => {
         const on = toggleStar("session", s.id);
-        toast(on ? "Saved" : "Removed from saved");
+        toast(on ? "Added to ★ Saved" : "Removed from ★ Saved");
         star.classList.toggle("on", on);
         star.setAttribute("aria-pressed", String(on));
-        if (program.starredOnly) renderProgram();
+        if (program.starredOnly) { flushEditors(); renderProgram(); }
       });
       head.append(star);
     }
@@ -398,8 +439,23 @@
 
     const meta = [];
     if (s.track) meta.push(el("span", { className: "tag", textContent: s.track }));
-    if (s.room) meta.push(el("span", { className: "room", textContent: s.room }));
+    if (s.room) {
+      /* The one card that needs you to arrange a ride was the one address you
+         could not tap for directions. bindStatic() already does this for the
+         main venue; same treatment. */
+      const map = extLink(s.room, "https://maps.google.com/?q=" + encodeURIComponent(s.room));
+      map.className = "room room-link";
+      meta.push(map);
+    }
     if (meta.length) body.append(el("div", { className: "meta" }, meta));
+
+    /* `summary` is the plain-language "what this means for you" line, and it
+       used to render inside the collapsed disclosure below -- so the reception's
+       "different venue, about a 15 minute drive" reached only someone who
+       already tapped for details. It belongs on the face of the card. */
+    if (s.summary) {
+      body.append(el("p", { className: "summary card-summary" }, s.summary));
+    }
 
     if (s.sponsor) body.append(el("p", { className: "sponsor", textContent: s.sponsor }));
 
@@ -424,12 +480,6 @@
       if (s.abstract) {
         s.abstract.split(/\n\s*\n/).forEach((para) =>
           details.append(el("p", { className: "abstract", textContent: para.trim() })));
-      }
-      if (s.summary) {
-        details.append(el("p", { className: "summary" }, [
-          el("strong", { textContent: "Why it matters: " }),
-          s.summary
-        ]));
       }
       details.append(noteEditor("session", s.id));
       body.append(details);
@@ -479,6 +529,7 @@
       });
       if (day.dateLabel) tab.append(el("span", { className: "day-date", textContent: day.dateLabel }));
       tab.addEventListener("click", () => {
+        flushEditors();
         program.day = day.id;
         syncDayTabs();
         renderProgram();
@@ -511,11 +562,13 @@
 
   function wireProgramControls() {
     $("#q").addEventListener("input", debounce((e) => {
+      flushEditors();
       program.query = norm(e.target.value.trim());
       renderProgram();
     }));
     const btn = $("#starred-only");
     btn.addEventListener("click", () => {
+      flushEditors();
       program.starredOnly = !program.starredOnly;
       btn.setAttribute("aria-pressed", String(program.starredOnly));
       btn.classList.toggle("on", program.starredOnly);
@@ -541,10 +594,10 @@
     star.classList.toggle("on", isStarred("speaker", p.id));
     star.addEventListener("click", () => {
       const on = toggleStar("speaker", p.id);
-      toast(on ? "Saved" : "Removed from saved");
+      toast(on ? "Added to ★ Saved" : "Removed from ★ Saved");
       star.classList.toggle("on", on);
       star.setAttribute("aria-pressed", String(on));
-      if (speakerState.starredOnly) renderSpeakers();
+      if (speakerState.starredOnly) { flushEditors(); renderSpeakers(); }
     });
 
     card.append(el("div", { className: "s-head" }, [
@@ -563,8 +616,12 @@
     if (mine.length) {
       const chips = el("div", { className: "chips" });
       mine.forEach((s) => {
-        const chip = el("button", { className: "chip", type: "button", textContent: s.title });
+        /* The time used to live only in the title attribute, which a phone
+           never surfaces -- so the chip said which session and never when. */
         const day = dayById.get(s.day);
+        const chip = el("button", {
+          className: "chip", type: "button", textContent: `${s.start} · ${s.title}`
+        });
         chip.title = `${day ? day.label + " · " : ""}${s.start}`;
         chip.addEventListener("click", () => openSession(s.id));
         chips.append(chip);
@@ -604,11 +661,13 @@
 
   function wireSpeakerControls() {
     $("#speaker-q").addEventListener("input", debounce((e) => {
+      flushEditors();
       speakerState.query = norm(e.target.value.trim());
       renderSpeakers();
     }));
     const btn = $("#speakers-starred-only");
     btn.addEventListener("click", () => {
+      flushEditors();
       speakerState.starredOnly = !speakerState.starredOnly;
       btn.setAttribute("aria-pressed", String(speakerState.starredOnly));
       btn.classList.toggle("on", speakerState.starredOnly);
@@ -619,6 +678,7 @@
   /* ── cross-navigation ────────────────────────────────────────────────── */
 
   function openSpeaker(id) {
+    flushEditors();
     speakerState.query = "";
     speakerState.starredOnly = false;
     $("#speaker-q").value = "";
@@ -632,6 +692,7 @@
   function openSession(id) {
     const s = sessionById.get(id);
     if (!s) return;
+    flushEditors();
     program.day = s.day;
     program.query = "";
     program.track = "";
@@ -704,6 +765,16 @@
       `${noteContext(n)} · saved ${relative(n.updatedAt)}` }));
     card.append(el("p", { className: "note-text", textContent: n.text }));
 
+    /* A session or speaker note can be edited on its own card; a quick note has
+       no card anywhere else, so it gets the editor here. The composer above
+       only ever adds. */
+    if (n.type === "quick") {
+      const edit = el("details", { className: "expand" });
+      edit.append(el("summary", {}, el("span", { className: "expand-label", textContent: "Edit" })));
+      edit.append(noteEditor("quick", n.entityId));
+      card.append(edit);
+    }
+
     const del = el("button", { className: "btn small ghost danger", type: "button", textContent: "Delete" });
     del.addEventListener("click", () => {
       /* Clear-all makes you type a phrase; deleting one note took a single tap
@@ -734,31 +805,66 @@
       ? all.filter((n) => norm(`${noteTitle(n)} ${n.text}`).includes(notesState.query))
       : all;
 
+    /* Starring and note-taking both say "saved", and the Notes tab is where
+       someone goes looking for either. It used to say "No notes yet" to a
+       person holding three starred sessions, with no hint they existed or that
+       the export would carry them. */
+    const starredSessions = DATA.sessions.filter((s) => isStarred("session", s.id)).length;
+    const starredSpeakers = DATA.speakers.filter((p) => isStarred("speaker", p.id)).length;
+    const savedBits = [
+      starredSessions && `${starredSessions} saved ${starredSessions === 1 ? "session" : "sessions"}`,
+      starredSpeakers && `${starredSpeakers} saved ${starredSpeakers === 1 ? "speaker" : "speakers"}`
+    ].filter(Boolean);
+    const savedLine = $("#saved-summary");
+    savedLine.hidden = savedBits.length === 0;
+    savedLine.textContent = savedBits.length
+      ? `★ ${savedBits.join(" and ")} — included when you export.`
+      : "";
+
     const mount = $("#notes-list");
     mount.textContent = "";
     $("#notes-empty").hidden = list.length > 0;
     $("#notes-empty").textContent = all.length
       ? "No notes match that search."
-      : "No notes yet. Save one from any session or speaker.";
+      : savedBits.length
+        ? "You have not typed any notes yet — your saved ★ items are listed above."
+        : "No notes yet. Save one from any session or speaker.";
     $("#notes-count").textContent = list.length
       ? `${list.length} of ${all.length} ${all.length === 1 ? "note" : "notes"}`
       : "";
 
     list.forEach((n) => mount.append(noteCard(n)));
 
-    const quick = getNote("quick", "general");
-    $("#quick-note-meta").textContent = quick ? `Saved ${relative(quick.updatedAt)}` : "";
-    if (quick && !$("#quick-note").value) $("#quick-note").value = quick.text;
+    /* The composer adds a new note every time; it is never an editor for one
+       standing note, so it is not pre-filled. Editing happens on the cards. */
+    const quickCount = all.filter((n) => n.type === "quick").length;
+    $("#quick-note-meta").textContent = quickCount
+      ? `${quickCount} quick ${quickCount === 1 ? "note" : "notes"} saved below`
+      : "";
 
-    $("#export-btn").disabled = all.length === 0;
+    /* Stars alone are worth exporting. Someone told to "pick three sessions"
+       stars three and types nothing; this used to leave Export greyed out with
+       the red Clear all as the only thing they could press. */
+    $("#export-btn").disabled = all.length === 0 && stars.size === 0;
     $("#clear-btn").disabled = all.length === 0 && stars.size === 0;
   }
 
   function wireNotesControls() {
+    /* Every save is a NEW note. The old code wrote every quick note to one
+       shared key, so the second thought of the day silently replaced the first
+       -- and since the note count stayed at 1, the save re-fired the first-note
+       toast, reassuring the attendee at the exact moment their earlier note was
+       destroyed. Notes already stored under the old "quick:general" key still
+       render and are still editable as cards. */
     $("#save-quick").addEventListener("click", () => {
-      const ok = saveNote("quick", "general", $("#quick-note").value);
-      if (!ok) toast("Could not save — browser storage is blocked.");
-      else toastNoteSaved();
+      const box = $("#quick-note");
+      if (!box.value.trim()) return toast("Type something first");
+      if (!saveNote("quick", `q${Date.now()}`, box.value)) {
+        return toast("Could not save — browser storage is blocked.");
+      }
+      box.value = "";
+      box.style.height = "auto";
+      toastNoteSaved();
       renderNotes();
     });
     autogrow($("#quick-note"));
@@ -775,18 +881,40 @@
     const head = [
       `# ${DATA.event.name} — My Notes`, "",
       [DATA.event.dates, DATA.event.location].filter(Boolean).join(" · "), "",
-      `Exported ${new Date().toLocaleString()} from this browser.`, ""
+      /* Stamped in the event's timezone, like every other time in the app. A
+         phone left on mainland time was labelling notes with the wrong hour. */
+      `Exported ${new Date().toLocaleString(undefined, { timeZone: DATA.event.timeZone })} ` +
+        `(${DATA.event.timeZone.split("/").pop().replace(/_/g, " ")} time) from this browser.`, ""
     ];
-    if (!list.length) return head.concat("No notes saved yet.").join("\n");
 
-    const starred = DATA.sessions.filter((s) => isStarred("session", s.id));
-    if (starred.length) {
+    /* Stars are built before the no-notes check, not after it. Someone whose
+       whole task is "pick three sessions" stars three and types nothing; the
+       early return used to hand them a file that said "No notes saved yet."
+       and threw the three away. */
+    const starredSessions = DATA.sessions.filter((s) => isStarred("session", s.id));
+    if (starredSessions.length) {
       head.push("---", "", "## Saved sessions", "");
-      starred.forEach((s) => {
+      starredSessions.forEach((s) => {
         const day = dayById.get(s.day);
         head.push(`- **${s.title}** — ${[day && day.label, s.start, s.room].filter(Boolean).join(" · ")}`);
       });
       head.push("");
+    }
+
+    const starredSpeakers = DATA.speakers.filter((p) => isStarred("speaker", p.id));
+    if (starredSpeakers.length) {
+      head.push("---", "", "## Saved speakers", "");
+      starredSpeakers.forEach((p) => {
+        const affil = [p.title, p.org].filter(Boolean).join(", ");
+        head.push(`- **${p.name}**${affil ? " — " + affil : ""}`);
+      });
+      head.push("");
+    }
+
+    if (!list.length) {
+      return head.concat(starredSessions.length || starredSpeakers.length
+        ? "You did not type any notes — the saved list above is everything."
+        : "No notes saved yet.").join("\n");
     }
 
     const body = list.flatMap((n, i) => [
@@ -960,14 +1088,24 @@
     timeZone: "UTC", hour: "2-digit", minute: "2-digit", hour12: false
   });
 
+  const utcDayFmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC", month: "short", day: "numeric"
+  });
+
   function utcLine(s) {
     const day = dayById.get(s.day);
     const start = zonedMs(day && day.date, s.start24);
     if (start == null) return null;
     const end = zonedMs(day && day.date, s.end24);
-    const text = end == null
+    let text = end == null
       ? `${utcFmt.format(start)} UTC`
       : `${utcFmt.format(start)}–${utcFmt.format(end)} UTC`;
+    /* Hawaiʻi is UTC−10, so everything from 2 PM HST on falls on the NEXT UTC
+       date. Times alone read as same-day to a remote colleague -- enough to
+       have them dial in a day early for the afternoon panels. */
+    if (day && day.date && new Date(start).toISOString().slice(0, 10) !== day.date) {
+      text += ` (${utcDayFmt.format(start)})`;
+    }
     return el("span", { className: "utc", textContent: text });
   }
 
@@ -1018,8 +1156,25 @@
       if (when) when.append(el("span", { className: `status-badge ${cls}`, textContent: label }));
     };
 
-    if (current.length) current.forEach((x) => mark(x.s.id, "is-now", "Now"));
-    else if (next) mark(next.s.id, "is-next", "Up Next");
+    /* "Up Next" was an else-branch, so for the whole day -- every minute a
+       session was actually running -- the app answered "what is on now?" and
+       stayed silent on "what is on next?", which is the other half of the
+       question. Badge both. */
+    current.forEach((x) => mark(x.s.id, "is-now", "Now"));
+    if (next) mark(next.s.id, "is-next", "Up Next");
+  }
+
+  /* On event day someone opens this to find out where to be, and at mid-morning
+     the live session sat ~1,350px down, behind two that had already finished.
+     Land them on it. First paint only, so it never fights the per-tab scroll
+     memory or a tap-through from a speaker card. */
+  let jumped = false;
+  function jumpToLive() {
+    if (jumped) return;
+    const target = $(".session.is-now") || $(".session.is-next");
+    if (!target) return;
+    jumped = true;
+    target.scrollIntoView({ block: "start", behavior: "auto" });
   }
 
   /* ── init ────────────────────────────────────────────────────────────── */
@@ -1039,6 +1194,9 @@
   renderNotes();
 
   syncStick();
+  /* After syncStick, so the scroll-margin that clears the sticky header is
+     measured rather than guessed. */
+  jumpToLive();
   addEventListener("resize", syncStick);
   /* The display face swaps in after first paint and changes the header height,
      so the measurement taken before that is stale by a couple of pixels. */

@@ -141,7 +141,12 @@ const DATA = {
       room: "604 Clubhouse, 199 Leilehua Golf Course Rd, Wahiawa, HI 96786",
       sponsor: "Sponsored by the Internet Society · Special mahalo to ID8",
       abstract: "Special viewing of The 100th, Seeds of Aloha (time permitting).",
-      summary: "Different venue from the daytime program — about a 15 minute drive from Mililani Tech Park.",
+      /* This line is the only place on the collapsed card that says the
+         reception is somewhere else. It renders on the face of the card, not
+         inside the details disclosure -- see sessionCard() in app.js.
+         The `room` field above keeps the venue's postal address exactly as
+         printed; the place name is spelled Wahiawā here, where it is ours. */
+      summary: "Different venue: this one is in Wahiawā, about a 15 minute drive from Mililani Tech Park — plan your ride.",
       links: [
         { label: "604 Clubhouse", url: "https://604clubhouse.com/" },
         { label: "The 100th, Seeds of Aloha", url: "https://100thfilm.org/" },
