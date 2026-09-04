@@ -3,3 +3,6 @@
 .playwright-mcp/
 _planning/
 node_modules/
+# playwright is a devDependency for the smoke test only; the shipped site has
+# no dependencies, so the lockfile is regenerated per session and not tracked.
+package-lock.json
